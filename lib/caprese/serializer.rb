@@ -1,0 +1,88 @@
+require 'active_model/serializer'
+require 'caprese/concerns/versioning'
+
+module Caprese
+  class Serializer < ActiveModel::Serializer
+    extend Versioning
+    include Versioning
+
+    # Add a links[:self] to this resource
+    #
+    # @example
+    #   object = Order<@token='asd27h'>
+    #   links = { self: '/api/v1/orders/asd27hß' }
+    link(:self) do
+      if respond_to?(url = version_name("#{object.class.name.underscore}_url"))
+        send(url, object.token)
+      end
+    end
+
+    # Overriden so we can define relationship links without any code in a specific
+    # serializer
+    def self.has_many(name, options = {}, &block)
+      super name, options, &build_association_block(name)
+    end
+
+    # @see has_many
+    def self.has_one(name, options = {}, &block)
+      super name, options, &build_association_block(name)
+    end
+
+    # @see has_many
+    def self.belongs_to(name, options = {}, &block)
+      super name, options, &build_association_block(name)
+    end
+
+    private
+
+    # Builds a block that is passed into an association when it is defined in a specific serializer
+    # The block is run, and links are added to each association so when it is rendered in the
+    # `relationships` object of the `data` for record, it contains links to the particular association
+    #
+    # @example
+    #   object = Order<@token=5, @product_id=10>
+    #   reflection_name = 'product'
+    #   # => {
+    #     id: 'asd27h',
+    #     type: 'orders',
+    #     relationships: {
+    #       product: {
+    #         id: 'hy7sql',
+    #         type: 'products',
+    #         links: {
+    #           self: '/api/v1/orders/asd27h/relationships/product',
+    #           related: '/api/v1/orders/asd27h/product'
+    #         }
+    #       }
+    #     }
+    #   }
+    #
+    # @param [String] reflection_name the name of the relationship
+    # @return [Block] a block to build links for the relationship
+    def self.build_association_block(reflection_name)
+      primary_key = Caprese.config.resource_primary_key
+
+      Proc.new do |serializer|
+        url = "relationship_definition_#{version_name("#{object.class.name.underscore}_url")}"
+        if serializer.respond_to? url
+          link :self, serializer.send(
+            url,
+            primary_key => object.read_attribute(primary_key),
+            relationship: reflection_name
+          )
+        end
+
+        url = "relationship_data_#{version_name("#{object.class.name.underscore}_url")}"
+        if serializer.respond_to? url
+          link :related, serializer.send(
+            url,
+            primary_key => object.read_attribute(primary_key),
+            relationship: reflection_name
+          )
+        end
+
+        :nil
+      end
+    end
+  end
+end
