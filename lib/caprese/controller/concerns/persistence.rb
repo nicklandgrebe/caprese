@@ -240,14 +240,13 @@ module Caprese
     #   create_params, update_params, etc.
     # @return [Hash] the built attributes to persist in a record
     #
-    # 1. Create an attributes hash
-    # 2. Add permitted attributes (scoped by "#{action}_params") to the attributes hash
-    # 3. Iterate over each relationship specified in the data object, adding each to the attributes hash
+    # 1. Create an attributes hash from the attributes of the data sent in
+    # 2. Iterate over each relationship specified in the data object, adding each to the attributes hash
     #    as a built resource (either a persisted resource found by token, or a new resource created with attributes
     #    defined in the resource identifier)
-    # 4. Return attributes hash
+    # 3. Return attributes hash, scoped to only those permitted by `#{action}_params`
     def build_attributes(action)
-      attributes = data_params.try(:[],:attributes).try(:permit, *send("#{action}_params")) || {}
+      attributes = data_params[:attributes]
       data_params[:relationships].try(:each) do |name, relationship|
         attributes[name] =
           if (relationship_data = relationship[:data]).is_a?(Array)
@@ -259,7 +258,7 @@ module Caprese
           end
       end
 
-      attributes
+      attributes.permit(*send("#{action}_params"))
     end
   end
 end
