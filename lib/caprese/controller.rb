@@ -10,7 +10,8 @@ require 'caprese/controller/concerns/rendering'
 require 'caprese/controller/concerns/typing'
 
 module Caprese
-  class Controller < ActionController::API
+  # TODO: Convert to ActionController::API with Rails 5
+  class Controller < ActionController::Base
     include ActiveSupport::Configurable
     include Callbacks
     include Errors
