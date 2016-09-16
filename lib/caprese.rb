@@ -1,4 +1,8 @@
-require "caprese/version"
+require 'caprese/controller'
+require 'caprese/record'
+require 'caprese/routing/caprese_resources'
+require 'caprese/serializer'
+require 'caprese/version'
 
 module Caprese
   def self.config

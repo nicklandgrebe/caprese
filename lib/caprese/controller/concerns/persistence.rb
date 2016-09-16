@@ -1,5 +1,5 @@
-require 'action_controller'
-require 'active_record'
+require 'active_record/associations'
+require 'active_record/validations'
 require 'active_support/concern'
 
 module Caprese

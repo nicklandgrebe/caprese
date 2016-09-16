@@ -1,4 +1,4 @@
-require 'active_model/serializer'
+require 'active_model_serializers'
 require 'caprese/concerns/versioning'
 
 module Caprese

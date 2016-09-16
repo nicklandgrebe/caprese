@@ -1,5 +1,6 @@
 require 'active_model'
 require 'active_support/concern'
+require 'active_support/dependencies'
 require 'caprese/errors'
 require 'caprese/record/errors'
 

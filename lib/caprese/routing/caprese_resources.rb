@@ -1,4 +1,4 @@
-require 'action_dispatch/routing/mapper/resources'
+require 'action_dispatch/routing/mapper'
 
 module Caprese
   module Routing

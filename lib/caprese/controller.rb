@@ -1,4 +1,5 @@
-require 'action_controller/api'
+require 'action_controller'
+require 'active_support/configurable'
 require 'caprese/concerns/versioning'
 require 'caprese/controller/concerns/callbacks'
 require 'caprese/controller/concerns/errors'
