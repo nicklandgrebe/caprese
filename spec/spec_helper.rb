@@ -11,5 +11,6 @@ require 'pry'
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 
 Rspec.configure do |config|
+  config.include FactoryGirl::Syntax::Methods
   config.include Responses
 end
