@@ -11,9 +11,9 @@ module Caprese
     # @example
     #   object = Order<@token='asd27h'>
     #   links = { self: '/api/v1/orders/asd27hß' }
-    link(:self) do
-      if respond_to?(url = version_name("#{object.class.name.underscore}_url"))
-        send(url, object.token)
+    link :self do
+      if respond_to?(url = serializer.version_name("#{object.class.name.underscore}_url"))
+        send(url, object.read_attribute(Caprese.config.resource_primary_key))
       end
     end
 
@@ -63,22 +63,26 @@ module Caprese
       primary_key = Caprese.config.resource_primary_key
 
       Proc.new do |serializer|
-        url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
-        if serializer.respond_to? url
-          link :self, serializer.send(
-            url,
-            primary_key => object.read_attribute(primary_key),
-            relationship: reflection_name
-          )
+        link :self do
+          url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
+          if respond_to? url
+            send(
+              url,
+              primary_key => object.read_attribute(primary_key),
+              relationship: reflection_name
+            )
+          end
         end
 
-        url = "relationship_data_#{serializer.version_name("#{object.class.name.underscore}_url")}"
-        if serializer.respond_to? url
-          link :related, serializer.send(
-            url,
-            primary_key => object.read_attribute(primary_key),
-            relationship: reflection_name
-          )
+        link :related do
+          url = "relationship_data_#{serializer.version_name("#{object.class.name.underscore}_url")}"
+          if respond_to? url
+            send(
+              url,
+              primary_key => object.read_attribute(primary_key),
+              relationship: reflection_name
+            )
+          end
         end
 
         :nil

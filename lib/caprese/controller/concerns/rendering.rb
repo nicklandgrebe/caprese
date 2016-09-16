@@ -1,11 +1,12 @@
 require 'active_support/concern'
+require 'caprese/adapter/json_api'
 
 module Caprese
   module Rendering
     extend ActiveSupport::Concern
 
     def render(options = {})
-      options[:adapter] = Caprese.config.interface
+      options[:adapter] = Caprese::Adapter::JsonApi
 
       if options[:json].respond_to?(:to_ary)
         options[:each_serializer] ||=
