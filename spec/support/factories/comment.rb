@@ -2,7 +2,12 @@ FactoryGirl.define do
   factory :comment do
     sequence(:body) { |n| "This is the #{n.ordinalize} comment" }
     post
-    rating
     user
+
+    trait :with_rating do
+      after_create do |comment|
+        create :rating, comment: comment
+      end
+    end
   end
 end

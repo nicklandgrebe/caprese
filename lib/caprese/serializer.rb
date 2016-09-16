@@ -63,7 +63,7 @@ module Caprese
       primary_key = Caprese.config.resource_primary_key
 
       Proc.new do |serializer|
-        url = "relationship_definition_#{version_name("#{object.class.name.underscore}_url")}"
+        url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
         if serializer.respond_to? url
           link :self, serializer.send(
             url,
@@ -72,7 +72,7 @@ module Caprese
           )
         end
 
-        url = "relationship_data_#{version_name("#{object.class.name.underscore}_url")}"
+        url = "relationship_data_#{serializer.version_name("#{object.class.name.underscore}_url")}"
         if serializer.respond_to? url
           link :related, serializer.send(
             url,

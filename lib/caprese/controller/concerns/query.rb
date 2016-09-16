@@ -1,5 +1,6 @@
 require 'active_support/concern'
 require 'caprese/errors'
+require 'kaminari'
 
 module Caprese
   module Query
@@ -173,7 +174,7 @@ module Caprese
     def queried_record
       @queried_record ||=
         get_record!(
-          @queried_record_scope,
+          queried_record_scope,
           column = self.class.config.resource_primary_key,
           params[column]
         )
@@ -183,7 +184,7 @@ module Caprese
     #
     # @return [Relation] the queried collection
     def queried_collection
-      @queried_collection ||= apply_sorting_pagination_to_scope(@queried_record_scope)
+      @queried_collection ||= apply_sorting_pagination_to_scope(queried_record_scope)
     end
   end
 end

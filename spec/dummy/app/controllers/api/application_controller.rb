@@ -1,3 +1,5 @@
+require 'responders'
+
 module API
   # Root level API controller that establishes configuration and endpoints that are not versioned
   class ApplicationController < Caprese::Controller

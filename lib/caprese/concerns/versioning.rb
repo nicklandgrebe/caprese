@@ -15,7 +15,7 @@ module Caprese
     def version_module(suffix = nil)
       name = (self.is_a?(Class) ? self : self.class).name.deconstantize
 
-      name + extension ? "::#{suffix}" : ''
+      name + (suffix ? "::#{suffix}" : '')
     end
 
     # Get versioned path (url)
