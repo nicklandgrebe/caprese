@@ -22,7 +22,7 @@ module Caprese
   config.optimize_relationships ||= true
 
   # If true, links will be rendered as `only_path: true`
-  config.optimize_links ||= true
+  config.only_path_links ||= true
 
   # Defines the translation scope for model and controller errors
   config.i18n_scope ||= '' # 'api.v1.errors'
