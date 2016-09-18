@@ -41,7 +41,7 @@ module Caprese
         end
 
         def id_for(serializer)
-          serializer.read_attribute_for_serialization(:id).to_s
+          serializer.read_attribute_for_serialization(Caprese.config.resource_primary_key).to_s
         end
       end
     end
