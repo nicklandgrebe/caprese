@@ -10,7 +10,7 @@ module Caprese
       around_action :enable_caprese_style_errors
 
       rescue_from Error do |e|
-        output = { json: e, serializer: Serializer::ErrorSerializer }
+        output = { json: e }
         render output.merge(e.header)
       end
     end
