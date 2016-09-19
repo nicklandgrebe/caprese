@@ -178,11 +178,11 @@ module Caprese
     #
     # @example
     #   create_params => [:body, user: [:name], post: [:title]]
-    #   flatten_action_params(:create) => [:body, :user]
+    #   flattened_permitted_params_for(:create) => [:body, :user]
     #
     # @param [Symbol] action the action we are getting flattened params for
     # @return [Array] the flattened array of keys for the action params
-    def flattened_permitted_action_params_for(action)
+    def flattened_permitted_params_for(action)
       permitted_params_for(action).map do |p|
         if p.is_a?(Hash)
           p.keys
@@ -241,7 +241,7 @@ module Caprese
       attributes = data[:attributes].try(:permit, *permitted_params_for(action)) || {}
 
       data[:relationships]
-      .try(:slice, *flattened_permitted_action_params_for(action))
+      .try(:slice, *flattened_permitted_params_for(action))
       .try(:each) do |relationship_name, relationship_data|
         attributes[relationship_name] = records_for_relationship(
           record,
