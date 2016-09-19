@@ -46,7 +46,7 @@ module Caprese
         if queried_association.reflection.collection?
           scope = relationship_scope(params[:relationship], queried_association.reader)
 
-          if params[:relation_id].present?
+          if params[:relation_primary_key_value].present?
             get_record!(scope, self.class.config.resource_primary_key, params[:relation_primary_key_value])
           else
             apply_sorting_pagination_to_scope(scope)
@@ -63,7 +63,7 @@ module Caprese
         links[:related] =
           send(
             related_url,
-            target.read_attribute(self.class.config.resource_primary_key)
+            target.read_attribute(self.config.resource_primary_key)
           )
       end
 
@@ -186,36 +186,42 @@ module Caprese
     #
     # PATCH/POST/DELETE /api/v1/:controller/:id/relationships/:relationship
     def update_relationship_definition
-      relationship_resources =
-        Array.wrap(params[:data]).map do |resource_identifier|
-          get_record!(
-            resource_identifier[:type],
-            column = self.class.config.resource_primary_key,
-            resource_identifier[column]
-          )
-        end
+      if queried_association &&
+        flattened_permitted_params_for(:update).include?(params[:relationship].to_sym)
 
-      successful =
-        case queried_association.reflection.macro
-        when :has_many
-          if request.patch?
-            queried_record.send("#{params[:relationship]}=", relationship_resources)
-          elsif request.post?
-            queried_record.send(params[:relationship]).push relationship_resources
-          elsif request.delete?
-            queried_record.send(params[:relationship]).delete relationship_resources
+        relationship_resources =
+          Array.wrap(params[:data]).map do |resource_identifier|
+            get_record!(
+              resource_identifier[:type],
+              column = self.config.resource_primary_key,
+              resource_identifier[column]
+            )
           end
-        when :has_one
-          if request.patch?
-            queried_record.send("#{params[:relationship]}=", relationship_resources[0])
-            objects[0].save
+
+        successful =
+          case queried_association.reflection.macro
+          when :has_many
+            if request.patch?
+              queried_record.send("#{params[:relationship]}=", relationship_resources)
+            elsif request.post?
+              queried_record.send(params[:relationship]).push relationship_resources
+            elsif request.delete?
+              queried_record.send(params[:relationship]).delete relationship_resources
+            end
+          when :has_one
+            if request.patch?
+              queried_record.send("#{params[:relationship]}=", relationship_resources[0])
+              objects[0].save
+            end
+          when :belongs_to
+            if request.patch?
+              queried_record.send("#{params[:relationship]}=", relationship_resources[0])
+              queried_record.save
+            end
           end
-        when :belongs_to
-          if request.patch?
-            queried_record.send("#{params[:relationship]}=", relationship_resources[0])
-            queried_record.save
-          end
-        end
+      else
+        successful = false
+      end
 
       if successful
         head :no_content

@@ -4,8 +4,12 @@ FactoryGirl.define do
     user
 
     trait :with_comments do
-      after_create do |post|
-        create_list(:comment, 2, post: post)
+      transient do
+        comment_count 2
+      end
+
+      after(:create) do |post, evaluator|
+        create_list(:comment, evaluator.comment_count, post: post)
       end
     end
   end

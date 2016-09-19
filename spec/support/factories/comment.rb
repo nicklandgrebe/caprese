@@ -5,7 +5,7 @@ FactoryGirl.define do
     user
 
     trait :with_rating do
-      after_create do |comment|
+      after(:create) do |comment|
         create :rating, comment: comment
       end
     end
