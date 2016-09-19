@@ -1,6 +1,7 @@
 FactoryGirl.define do
   factory :post do
     sequence(:title) { |n| "Post #{n}" }
+    user
 
     trait :with_comments do
       after_create do |post|
