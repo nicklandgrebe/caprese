@@ -175,7 +175,7 @@ module Caprese
       @queried_record ||=
         get_record!(
           queried_record_scope,
-          column = self.class.config.resource_primary_key,
+          column = self.config.resource_primary_key,
           params[column]
         )
     end
