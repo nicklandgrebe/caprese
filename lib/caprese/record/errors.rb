@@ -70,10 +70,12 @@ module Caprese
         raise NotImplementedError
       end
 
-      # We will count on the fact controllers will use API::Error correctly and serialize this to json
-      # on their own
       def as_json
-        raise NotImplementedError
+        Hash[
+          map do |field, errors|
+            [field, Array.wrap(errors).map { |e| e.as_json }]
+          end
+        ]
       end
     end
   end

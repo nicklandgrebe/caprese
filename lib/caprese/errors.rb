@@ -8,16 +8,13 @@ module Caprese
     attr_reader :record
 
     def initialize(record)
-      super
+      super()
       @record = record
       @header = { status: :unprocessable_entity }
     end
 
-    # Override serialize so we can serialize every error on the record
-    #
-    # @return [Array] a serialized array of errors
-    def serialize
-      @record.errors.to_a.map { |e| e.serialize }
+    def as_json
+      record.errors.as_json
     end
   end
 

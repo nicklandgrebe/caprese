@@ -50,19 +50,20 @@ module Caprese
     def create
       fail_on_type_mismatch(data_params[:type])
 
-      resource = queried_record_scope.build(build_attributes(:create))
-      execute_after_initialize_callbacks(resource)
+      record = queried_record_scope.build
+      assign_record_attributes(record, :create, data_params[:attributes])
+      execute_after_initialize_callbacks(record)
 
-      execute_before_create_callbacks(resource)
-      execute_before_save_callbacks(resource)
+      execute_before_create_callbacks(record)
+      execute_before_save_callbacks(record)
 
-      resource.save!
+      record.save!
 
-      execute_after_create_callbacks(resource)
-      execute_after_save_callbacks(resource)
+      execute_after_create_callbacks(record)
+      execute_after_save_callbacks(record)
 
       render(
-        json: resource,
+        json: record,
         status: :created,
         fields: query_params[:fields],
         include: query_params[:include]
@@ -88,7 +89,8 @@ module Caprese
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      queried_record.update!(build_attributes(:update))
+      assign_record_attributes(queried_record, :update, data_params[:attributes])
+      queried_record.save!
 
       execute_after_update_callbacks(queried_record)
       execute_after_save_callbacks(queried_record)
@@ -145,57 +147,7 @@ module Caprese
       fail NotImplementedError
     end
 
-    # Using a resource_identifier, finds or builds a resource for a relationship
-    #
-    # @example
-    #   resource_identifier = { type: 'order_items', token: 'as929a22' }
-    #   build_relationship_resource(:order_items, :create, resource_identifier)
-    #   # => OrderItem<@token='as929a22'>
-    #
-    # @example
-    #   create_params = [..., order_items: [:title, :amount, :tax]]
-    #   resource_identifier = { type: 'order_items', attributes: { title: 'Title', amount: 5.0 } }
-    #   build_relationship_resource(:order_items, :create, resource_identifier)
-    #   # => OrderItem<@token=nil, @title='Title', @amount=5.0>
-    #
-    # @param [String] name the name of the relationship
-    # @param [String] action the name of the action that is being performed (create, update)
-    # @param [Hash] resource_identifier the resource identifier for the resource
-    # @return [ActiveRecord::Base] the found or built resource for the relationship
-    #
-    # 1. If there is a token in the resource identifier, find the resource with that ID
-    # 2. If there are attributes, build a new record of the type specified in the request
-    # 3. If there is neither a token nor attributes, the resource identifier is invalid
-    # 4. Assign the attributes permitted for the action to the relationship record
-    # 5. Return the found/built resource
-    def build_relationship_resource(name, action, resource_identifier)
-      type = resource_identifier[:type]
-      attributes = resource_identifier[:attributes]
-
-      resource =
-        if (token = resource_identifier[:token])
-          get_record!(type, :token, token)
-        elsif attributes
-          record_scope(type).build
-        else
-          fail Error.new(field: name, code: :invalid)
-        end
-
-      if attributes
-        resource.assign_attributes(
-          attributes.permit(
-            *send("#{action}_params")
-            .detect { |p| p.try(:keys).try(:[], 0) == name.to_sym }
-            .try(:values)
-            .try(:[], 0)
-          )
-        )
-      end
-
-      resource
-    end
-
-    # Builds an attributes object to persist in a record, with attributes and relationships included
+    # Builds permitted attributes and relationships into the queried record
     #
     # @example
     #   params = {
@@ -209,7 +161,7 @@ module Caprese
     #   }
     #   create_params => [:price]
     #
-    #   build_attributes(:create) => { price: '...', product: Product<@token='asj38k'> }
+    #   assign_attributes(record, :create) => { price: '...', product: Product<@token='asj38k'> }
     #
     # @example
     #   params = {
@@ -231,13 +183,13 @@ module Caprese
     #
     #   create_params => [:price, order_items: [:title, :amount, :tax]]
     #
-    #   build_attributes(:create) # => {
+    #   assign_attributes(record, :create) # => {
     #     price: '...',
     #     order_items: [OrderItem<@token=nil,@title='An order item',@amount=5.0,@tax=0.0>]
     #   }
     #
-    # @param [Symbol] action the action to build attributes for (determines which params object we use):
-    #   create_params, update_params, etc.
+    # @param [ActiveRecord::Base] the record to build attribute into
+    # @param [Symbol] action the action that is calling this method (create, update)
     # @return [Hash] the built attributes to persist in a record
     #
     # 1. Create an attributes hash from the attributes of the data sent in
@@ -245,20 +197,88 @@ module Caprese
     #    as a built resource (either a persisted resource found by token, or a new resource created with attributes
     #    defined in the resource identifier)
     # 3. Return attributes hash, scoped to only those permitted by `#{action}_params`
-    def build_attributes(action)
-      attributes = data_params[:attributes]
-      data_params[:relationships].try(:each) do |name, relationship|
-        attributes[name] =
-          if (relationship_data = relationship[:data]).is_a?(Array)
-            relationship_data.map do |resource_identifier|
-              build_relationship_resource(name, action, resource_identifier)
-            end
-          else
-            build_relationship_resource(name, action, relationship_data)
-          end
+    def assign_record_attributes(record, action, attributes)
+      attributes = attributes.dup
+      data_params[:relationships].try(:each) do |relationship_name, relationship_data|
+        attributes[relationship_name] = records_for_relationship(
+          record,
+          relationship_name,
+          relationship_data,
+          action
+        )
       end
 
-      attributes.permit(*send("#{action}_params"))
+      record.assign_attributes(attributes.permit(*send("#{action}_params")))
+    end
+
+    # Gets all the records for a relationship given a relationship data definition
+    #
+    # @param [ActiveRecord::Base] owner the owner of the relationship
+    # @param [String] relationship_name the name of the relationship to get records for
+    # @param [Hash,Array<Hash>] relationship_data the data to use to get records
+    # @param [Symbol] action the action that is calling this method (create, update)
+    # @return [ActiveRecord::Base,Array<ActiveRecord::Base>] the record(s) for the relationship
+    def records_for_relationship(owner, relationship_name, relationship_data, action)
+      if relationship_data.is_a?(Array)
+        relationship_data.map do |resource_identifier|
+          ref = record_for_relationship(owner, relationship_name, resource_identifier)
+
+          if(attributes = resource_identifier[:attributes])
+            assign_relationship_record_attributes(ref, relationship_name, action, attributes)
+          end
+
+          ref
+        end
+      else
+        ref = record_for_relationship(owner, relationship_name, relationship_data)
+
+        if(attributes = relationship_data[:attributes])
+          assign_relationship_record_attributes(ref, relationship_name, action, attributes)
+        end
+
+        ref
+      end
+    end
+
+    # Given a resource_identifier, finds or builds a resource for a relationship
+    #
+    # @param [ActiveRecord::Base] owner the owner of the relationship record
+    # @param [String] relationship_name the name of the relationship
+    # @param [Hash] resource_identifier the resource identifier for the resource
+    # @return [ActiveRecord::Base] the found or built resource for the relationship
+    def record_for_relationship(owner, relationship_name, resource_identifier)
+      record =
+        if (token = resource_identifier[Caprese.config.resource_primary_key])
+          get_record!(
+            resource_identifier[:type],
+            Caprese.config.resource_primary_key,
+            token
+          )
+        elsif resource_identifier[:attributes]
+          record_scope(type).build
+        else
+          owner.errors.add(relationship_name)
+        end
+
+      record
+    end
+
+    # Assigns permitted attributes for a record in a relationship, for a given action
+    # like create/update
+    #
+    # @param [ActiveRecord::Base] record the relationship record
+    # @param [String] relationship_name the name of the relationship
+    # @param [Symbol] action the action that is calling this method (create, update)
+    # @param [Hash] resource_identifier the resource identifier
+    def assign_relationship_record_attributes(record, relationship_name, action, attributes)
+      record.assign_attributes(
+        attributes.permit(
+          *send("#{action}_params")
+          .detect { |p| p.try(:keys).try(:[], 0) == relationship_name.to_sym }
+          .try(:values)
+          .try(:[], 0)
+        )
+      )
     end
   end
 end

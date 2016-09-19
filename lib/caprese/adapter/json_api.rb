@@ -167,7 +167,12 @@ module Caprese
             Error.resource_errors(error_serializer, instance_options)
           end
         else
-          hash[:errors] = Error.resource_errors(serializer, instance_options)
+          hash[:errors] =
+            if serializer.resource_errors?
+              Error.resource_errors(serializer, instance_options)
+            else
+              Error.param_errors(serializer, instance_options)
+            end
         end
         hash
       end

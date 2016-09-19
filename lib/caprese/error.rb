@@ -30,19 +30,9 @@ module Caprese
       @header = { status: :bad_request }
     end
 
+    # @return [String] The scope to look for I18n translations in
     def i18n_scope
       Caprese.config.i18n_scope
-    end
-
-    # Creates a serializable hash for the error so we can serialize and return it
-    #
-    # @return [Hash] the serializable hash of the error
-    def serialize
-      {
-        code: code,
-        field: field,
-        message: full_message
-      }
     end
 
     # The full error message based on the different attributes we initialized the error with
@@ -61,8 +51,10 @@ module Caprese
         else
           if i18n_set? "#{i18n_scope}.models.#{@model}.#{code}", t
             I18n.t("#{i18n_scope}.models.#{@model}.#{code}", t)
-          else
+          elsif i18n_set? "#{i18n_scope}.#{code}", t
             I18n.t("#{i18n_scope}.#{code}", t)
+          else
+            code.to_s
           end
         end
       elsif @controller && @action
@@ -94,6 +86,17 @@ module Caprese
       @header = header
       @header[:status] ||= :bad_request
       self
+    end
+
+    # Creates a serializable hash for the error so we can serialize and return it
+    #
+    # @return [Hash] the serializable hash of the error
+    def as_json
+      {
+        code: code,
+        field: field,
+        message: full_message
+      }
     end
 
     private

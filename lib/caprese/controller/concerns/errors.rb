@@ -1,5 +1,6 @@
 require 'active_support/concern'
 require 'caprese/error'
+require 'caprese/serializer/error_serializer'
 
 module Caprese
   module Errors
@@ -9,7 +10,8 @@ module Caprese
       around_action :enable_caprese_style_errors
 
       rescue_from Error do |e|
-        render ({ json: e.serialize }.merge(e.header))
+        output = { json: e, serializer: Serializer::ErrorSerializer }
+        render output.merge(e.header)
       end
     end
 

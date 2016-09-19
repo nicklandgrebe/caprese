@@ -1,3 +1,5 @@
+require 'caprese/adapter/json_api/json_pointer'
+
 module Caprese
   module Adapter
     class JsonApi
@@ -8,7 +10,7 @@ module Caprese
         # Builds a JSON API Errors Object
         # {http://jsonapi.org/format/#errors JSON API Errors}
         #
-        # @param [ActiveModel::Serializer::ErrorSerializer] error_serializer
+        # @param [Caprese::Serializer::ErrorSerializer] error_serializer
         # @return [Array<Symbol, Array<String>>] i.e. attribute_name, [attribute_errors]
         def self.resource_errors(error_serializer, options)
           error_serializer.as_json.flat_map do |attribute_name, attribute_errors|
@@ -16,6 +18,20 @@ module Caprese
               options)
             attribute_error_objects(attribute_name, attribute_errors)
           end
+        end
+
+        # FIXME: param_errors implies multiple errors, but since we use a fail first
+        # strategy, there will only be one param error ever, as reflected by this method's
+        # definition
+        def self.param_errors(error_serializer, options)
+          error_attributes = error_serializer.as_json
+          [
+            {
+              code: error_attributes[:code],
+              detail: error_attributes[:message],
+              source: error_source(:parameter, error_attributes[:field])
+            }
+          ]
         end
 
         # definition:
@@ -48,7 +64,8 @@ module Caprese
           attribute_errors.map do |attribute_error|
             {
               source: error_source(:pointer, attribute_name),
-              detail: attribute_error
+              code: attribute_error[:code],
+              detail: attribute_error[:message]
             }
           end
         end
@@ -79,7 +96,7 @@ module Caprese
           case source_type
           when :pointer
             {
-              pointer: ActiveModelSerializers::JsonPointer.new(:attribute, attribute_name)
+              pointer: JsonApi::JsonPointer.new(:attribute, attribute_name)
             }
           when :parameter
             {
