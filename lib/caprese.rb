@@ -26,4 +26,10 @@ module Caprese
 
   # Defines the translation scope for model and controller errors
   config.i18n_scope ||= '' # 'api.v1.errors'
+
+  # The default size of any page queried
+  config.default_page_size ||= 10
+
+  # The maximum size of any page queried
+  config.max_page_size ||= 100
 end
