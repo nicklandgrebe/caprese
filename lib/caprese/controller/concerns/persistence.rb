@@ -51,7 +51,7 @@ module Caprese
       fail_on_type_mismatch(data_params[:type])
 
       record = queried_record_scope.build
-      assign_record_attributes(record, :create, data_params[:attributes])
+      assign_record_attributes(record, :create, data_params)
       execute_after_initialize_callbacks(record)
 
       execute_before_create_callbacks(record)
@@ -89,7 +89,7 @@ module Caprese
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      assign_record_attributes(queried_record, :update, data_params[:attributes])
+      assign_record_attributes(queried_record, :update, data_params)
       queried_record.save!
 
       execute_after_update_callbacks(queried_record)
@@ -132,7 +132,7 @@ module Caprese
     #
     # @return [Array] a list of params permitted to create a record of whatever type
     #   a given controller manages
-    def create_params
+    def permitted_create_params
       fail NotImplementedError
     end
 
@@ -143,8 +143,53 @@ module Caprese
     #
     # @return [Array] a list of params permitted to update a record of whatever type
     #   a given controller manages
-    def update_params
+    def permitted_update_params
       fail NotImplementedError
+    end
+
+    # Gets the permitted params for a given action (create, update)
+    #
+    # @param [Symbol] action the action to get permitted params for
+    # @return [Array] the permitted params for a given action
+    def permitted_params_for(action)
+      send("permitted_#{action}_params")
+    end
+
+    # Gets a set of nested params in an action_params definition
+    #
+    # @example
+    #   create_params => [:body, user: [:name, :email]]
+    #   nested_params_for(:create, :user)
+    #     => [:name, :email]
+    #
+    # @param [Symbol] action the action to get nested params in
+    # @param [Symbol] key the key of the nested params
+    # @return [Array,Nil] the nested params for a given key
+    def nested_permitted_params_for(action, key)
+      hash_params = permitted_params_for(action).detect { |p| p.is_a?(Hash) }
+
+      if hash_params
+        hash_params[key]
+      end
+    end
+
+    # Gets only the top level keys for action params so we can filter attributes
+    # and relationships
+    #
+    # @example
+    #   create_params => [:body, user: [:name], post: [:title]]
+    #   flatten_action_params(:create) => [:body, :user]
+    #
+    # @param [Symbol] action the action we are getting flattened params for
+    # @return [Array] the flattened array of keys for the action params
+    def flattened_permitted_action_params_for(action)
+      permitted_params_for(action).map do |p|
+        if p.is_a?(Hash)
+          p.keys
+        else
+          p
+        end
+      end.flatten
     end
 
     # Builds permitted attributes and relationships into the queried record
@@ -188,18 +233,16 @@ module Caprese
     #     order_items: [OrderItem<@token=nil,@title='An order item',@amount=5.0,@tax=0.0>]
     #   }
     #
-    # @param [ActiveRecord::Base] the record to build attribute into
+    # @param [ActiveRecord::Base] record the record to build attribute into
     # @param [Symbol] action the action that is calling this method (create, update)
-    # @return [Hash] the built attributes to persist in a record
-    #
-    # 1. Create an attributes hash from the attributes of the data sent in
-    # 2. Iterate over each relationship specified in the data object, adding each to the attributes hash
-    #    as a built resource (either a persisted resource found by token, or a new resource created with attributes
-    #    defined in the resource identifier)
-    # 3. Return attributes hash, scoped to only those permitted by `#{action}_params`
-    def assign_record_attributes(record, action, attributes)
-      attributes = attributes.dup
-      data_params[:relationships].try(:each) do |relationship_name, relationship_data|
+    # @param [Hash] data the data to use when constructing attributes/relationships to
+    #   assign to the record
+    def assign_record_attributes(record, action, data)
+      attributes = data[:attributes].try(:permit, *permitted_params_for(action)) || {}
+
+      data[:relationships]
+      .try(:slice, *flattened_permitted_action_params_for(action))
+      .try(:each) do |relationship_name, relationship_data|
         attributes[relationship_name] = records_for_relationship(
           record,
           relationship_name,
@@ -208,31 +251,33 @@ module Caprese
         )
       end
 
-      record.assign_attributes(attributes.permit(*send("#{action}_params")))
+      record.assign_attributes(attributes)
     end
 
     # Gets all the records for a relationship given a relationship data definition
     #
+    # TODO: Allow resource_identifier[:data][:relationships] assignment
+    #
     # @param [ActiveRecord::Base] owner the owner of the relationship
     # @param [String] relationship_name the name of the relationship to get records for
-    # @param [Hash,Array<Hash>] relationship_data the data to use to get records
+    # @param [Hash,Array<Hash>] relationship_ids the identifier data to use to get records
     # @param [Symbol] action the action that is calling this method (create, update)
     # @return [ActiveRecord::Base,Array<ActiveRecord::Base>] the record(s) for the relationship
-    def records_for_relationship(owner, relationship_name, relationship_data, action)
-      if relationship_data.is_a?(Array)
-        relationship_data.map do |resource_identifier|
-          ref = record_for_relationship(owner, relationship_name, resource_identifier)
+    def records_for_relationship(owner, relationship_name, relationship_ids, action)
+      if relationship_ids.is_a?(Array)
+        relationship_ids.map do |resource_identifier|
+          ref = record_for_relationship(owner, relationship_name, resource_identifier[:data])
 
-          if(attributes = resource_identifier[:attributes])
+          if(attributes = resource_identifier[:data][:attributes])
             assign_relationship_record_attributes(ref, relationship_name, action, attributes)
           end
 
           ref
         end
       else
-        ref = record_for_relationship(owner, relationship_name, relationship_data)
+        ref = record_for_relationship(owner, relationship_name, relationship_ids[:data])
 
-        if(attributes = relationship_data[:attributes])
+        if(attributes = relationship_ids[:data][:attributes])
           assign_relationship_record_attributes(ref, relationship_name, action, attributes)
         end
 
@@ -240,7 +285,7 @@ module Caprese
       end
     end
 
-    # Given a resource_identifier, finds or builds a resource for a relationship
+    # Given a resource identifier, finds or builds a resource for a relationship
     #
     # @param [ActiveRecord::Base] owner the owner of the relationship record
     # @param [String] relationship_name the name of the relationship
@@ -248,11 +293,11 @@ module Caprese
     # @return [ActiveRecord::Base] the found or built resource for the relationship
     def record_for_relationship(owner, relationship_name, resource_identifier)
       record =
-        if (token = resource_identifier[Caprese.config.resource_primary_key])
+        if (id = resource_identifier[Caprese.config.resource_primary_key])
           get_record!(
             resource_identifier[:type],
             Caprese.config.resource_primary_key,
-            token
+            id
           )
         elsif resource_identifier[:attributes]
           record_scope(type).build
@@ -272,12 +317,7 @@ module Caprese
     # @param [Hash] resource_identifier the resource identifier
     def assign_relationship_record_attributes(record, relationship_name, action, attributes)
       record.assign_attributes(
-        attributes.permit(
-          *send("#{action}_params")
-          .detect { |p| p.try(:keys).try(:[], 0) == relationship_name.to_sym }
-          .try(:values)
-          .try(:[], 0)
-        )
+        attributes.permit(nested_permitted_params_for(action, relationship_name))
       )
     end
   end

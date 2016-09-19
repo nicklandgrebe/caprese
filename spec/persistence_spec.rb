@@ -1,0 +1,176 @@
+require 'spec_helper'
+
+describe 'Requests that persist data', type: :request do
+  let!(:resource) do
+    create :post
+  end
+
+  let!(:user) do
+    create :user
+  end
+
+  describe '#create' do
+    before do
+      post "/api/v1/#{type}/", { data: data }
+    end
+
+    subject(:type) { 'comments' }
+    subject(:attributes) { {} }
+    subject(:relationships) { {} }
+    subject(:data) do
+      output = { type: type }
+      output.merge!(attributes: attributes)
+      output.merge!(relationships: relationships)
+    end
+
+    context 'when fields are valid' do
+      subject(:attributes) do
+        {
+          body: 'unique_body'
+        }
+      end
+
+      subject(:relationships) do
+        {
+          user: { data: { type: 'users', id: user.id } },
+          post: { data: { type: 'posts', id: resource.id } }
+        }
+      end
+
+      it 'creates the record' do
+        expect(Comment.count).to eq(1)
+      end
+
+      it 'assigns attributes' do
+        expect(Comment.last.body).to eq('unique_body')
+      end
+
+      it 'assigns relationships' do
+        expect(Comment.last.post).to eq(resource)
+        expect(Comment.last.user).to eq(user)
+      end
+    end
+
+    context 'when attributes are invalid' do
+      subject(:attributes) { {} }
+
+      subject(:relationships) do
+        {
+          post: { data: { type: 'posts', id: resource.id } },
+          user: { data: { type: 'users', id: user.id } }
+        }
+      end
+
+      it 'fails to create the record with errors' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/body')
+      end
+    end
+
+    context 'when relationships are invalid' do
+      subject(:attributes) do
+        {
+          body: 'unique_body'
+        }
+      end
+
+      subject(:relationships) do
+        {
+          post: { data: { type: 'posts', id: resource.id + 10000 } },
+          user: { data: { type: 'users', id: user.id } }
+        }
+      end
+
+      it 'fails to create the record with errors' do
+        expect(json['errors'][0]['code']).to eq('not_found')
+      end
+    end
+  end
+
+  describe '#update' do
+    before { put "/api/v1/#{type}/#{comment.id}", { data: data } }
+
+    subject(:type) { 'comments' }
+    subject(:comment) { create(:comment, user: user, post: resource) }
+    subject(:attributes) { {} }
+    subject(:relationships) { {} }
+    subject(:data) do
+      output = { type: type }
+      output.merge!(attributes: attributes)
+      output.merge!(relationships: relationships)
+    end
+
+    context 'valid' do
+      context 'attributes' do
+        subject(:attributes) do
+          {
+            body: 'unique_body2'
+          }
+        end
+
+        it 'updates the record' do
+          expect(Comment.last.body).to eq('unique_body2')
+        end
+      end
+
+      context 'relationships' do
+        let!(:other_user) { create :user }
+
+        subject(:relationships) do
+          {
+            user: { data: { type: 'users', id: other_user.id } },
+          }
+        end
+
+        it 'updates the record' do
+          expect(Comment.last.user).to eq(other_user)
+        end
+      end
+    end
+
+    context 'invalid' do
+      context 'attributes' do
+        subject(:attributes) do
+          {
+            body: ''
+          }
+        end
+
+        it 'fails to create the record with errors' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/body')
+        end
+      end
+
+      context 'relationships' do
+        subject(:relationships) do
+          {
+            user: { data: { type: 'users', id: user.id + 10000 } }
+          }
+        end
+
+        it 'fails to create the record with errors' do
+          expect(json['errors'][0]['code']).to eq('not_found')
+        end
+      end
+    end
+  end
+
+  describe '#destroy' do
+    before { delete "/api/v1/#{destroying.class.name.underscore.pluralize}/#{destroying.id}" }
+
+    context 'when resource can be deleted' do
+      subject(:destroying) { create(:comment, user: user, post: resource) }
+
+      it 'deletes the resource' do
+        expect(Comment.count).to eq(0)
+      end
+    end
+
+    context 'when resource cannot be deleted' do
+      subject(:destroying) { create(:user) }
+
+      it 'responds with 403' do
+        expect(response.status).to eq(403)
+      end
+    end
+  end
+end

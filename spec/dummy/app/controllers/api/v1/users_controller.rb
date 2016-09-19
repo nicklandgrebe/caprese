@@ -1,14 +1,14 @@
 module API
   module V1
-    class CommentsController < ApplicationController
+    class UsersController < ApplicationController
       private
 
       def permitted_create_params
-        [:body, :user, :post]
+        [:name]
       end
 
       def permitted_update_params
-        [:body, :user, :post]
+        [:name]
       end
     end
   end
