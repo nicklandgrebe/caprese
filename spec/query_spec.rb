@@ -70,6 +70,25 @@ describe 'Querying resources', type: :request do
         Caprese.config.max_page_size = @max_page_size
       end
     end
+
+    context 'limit and offset' do
+      it 'applies the limit' do
+        get '/api/v1/comments?limit=1'
+        expect(json['data'].count).to eq(1)
+      end
+
+      it 'applies the offset' do
+        get '/api/v1/comments?offset=2'
+        expect(json['data'][0]['id']).to eq(Comment.offset(2).first.id.to_s)
+      end
+
+      context 'when offset is negative' do
+        it 'starts from end of the scope' do
+          get '/api/v1/comments?offset=-1&limit=1'
+          expect(json['data'][0]['id']).to eq(Comment.last.id.to_s)
+        end
+      end
+    end
   end
 
   describe 'sorting' do
