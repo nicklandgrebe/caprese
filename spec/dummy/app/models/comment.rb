@@ -1,5 +1,5 @@
 class Comment < ApplicationRecord
-  belongs_to :post
+  belongs_to :post, autosave: true
   belongs_to :user
 
   has_one :rating

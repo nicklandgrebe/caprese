@@ -187,7 +187,7 @@ module Caprese
     # PATCH/POST/DELETE /api/v1/:controller/:id/relationships/:relationship
     def update_relationship_definition
       if queried_association &&
-        flattened_permitted_params_for(:update).include?(params[:relationship].to_sym)
+        flattened_keys_for(permitted_params_for(:update)).include?(params[:relationship].to_sym)
 
         relationship_resources =
           Array.wrap(params[:data]).map do |resource_identifier|

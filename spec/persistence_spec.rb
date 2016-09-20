@@ -84,6 +84,43 @@ describe 'Requests that persist data', type: :request do
         expect(json['errors'][0]['code']).to eq('not_found')
       end
     end
+
+    context 'when creating with autosave associations' do
+      subject(:attributes) do
+        {
+          body: 'unique_body'
+        }
+      end
+
+      subject(:relationships) do
+        {
+          user: { data: { type: 'users', id: user.id } },
+          post: {
+            data: {
+              type: 'posts',
+              attributes: {
+                title: 'A post title'
+              },
+              relationships: {
+                user: { data: { type: 'users', id: user.id } }
+              }
+            }
+          }
+        }
+      end
+
+      it 'creates the record' do
+        expect(Comment.count).to eq(1)
+      end
+
+      it 'creates the autosave association with attributes' do
+        expect(Comment.first.post.title).to eq('A post title')
+      end
+
+      it 'creates the autosave association with relationships' do
+        expect(Comment.first.post.user).to eq(user)
+      end
+    end
   end
 
   describe '#update' do
