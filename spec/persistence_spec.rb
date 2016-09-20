@@ -120,6 +120,36 @@ describe 'Requests that persist data', type: :request do
       it 'creates the autosave association with relationships' do
         expect(Comment.first.post.user).to eq(user)
       end
+
+      context 'when attributes of nested association are invalid' do
+        subject(:relationships) do
+          {
+            user: { data: { type: 'users', id: user.id } },
+            post: {
+              data: {
+                type: 'posts',
+                attributes: {
+                  title: 'A post title'
+                },
+                relationships: {
+                  user: {
+                    data: {
+                      type: 'users',
+                      attributes: {
+                        name: ''
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        end
+
+        it 'correctly points to the attribute that caused the error' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/relationships/user/data/attributes/name')
+        end
+      end
     end
   end
 

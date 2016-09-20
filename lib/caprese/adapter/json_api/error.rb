@@ -16,7 +16,7 @@ module Caprese
           error_serializer.as_json.flat_map do |attribute_name, attribute_errors|
             attribute_name = JsonApi.send(:transform_key_casing!, attribute_name,
               options)
-            attribute_error_objects(attribute_name, attribute_errors)
+            attribute_error_objects(error_serializer.object.record, attribute_name, attribute_errors)
           end
         end
 
@@ -29,7 +29,7 @@ module Caprese
             {
               code: error_attributes[:code],
               detail: error_attributes[:message],
-              source: error_source(:parameter, error_attributes[:field])
+              source: error_source(:parameter, nil, error_attributes[:field])
             }
           ]
         end
@@ -60,10 +60,10 @@ module Caprese
         #     detail: 'something went terribly wrong',
         #     status: '500'
         #   }.merge!(errorSource)
-        def self.attribute_error_objects(attribute_name, attribute_errors)
+        def self.attribute_error_objects(record, attribute_name, attribute_errors)
           attribute_errors.map do |attribute_error|
             {
-              source: error_source(:pointer, attribute_name),
+              source: error_source(:pointer, record, attribute_name),
               code: attribute_error[:code],
               detail: attribute_error[:message]
             }
@@ -92,12 +92,22 @@ module Caprese
         #       parameter: 'pres'
         #     }
         #   end
-        def self.error_source(source_type, attribute_name)
+        def self.error_source(source_type, record, attribute_name)
           case source_type
           when :pointer
-            {
-              pointer: JsonApi::JsonPointer.new(:attribute, attribute_name)
-            }
+            if record.has_attribute?(attribute_name)
+              {
+                pointer: JsonApi::JsonPointer.new(:attribute, record, attribute_name)
+              }
+            elsif attribute_name.to_s.split('.').size > 1
+              {
+                pointer: JsonApi::JsonPointer.new(:relationship_attribute, record, attribute_name)
+              }
+            else
+              {
+                pointer: JsonApi::JsonPointer.new(:relationship, record, attribute_name)
+              }
+            end
           when :parameter
             {
               parameter: attribute_name
