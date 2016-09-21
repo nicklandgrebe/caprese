@@ -1,9 +1,14 @@
 language: ruby
 cache: bundler
-
 rvm:
   - jruby
   - 2.1.5
   - 2.2.2
-
-script: 'bundle exec rake'
+env:
+  - DB=sqlite
+script:
+  - RAILS_ENV=test bundle exec rake db:migrate --trace
+  - bundle exec rake db:test:prepare
+  - bundle exec rake
+before_script:
+  - cp config/database.travis.yml config/database.yml
