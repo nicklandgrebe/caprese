@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'kaminari'
   spec.add_dependency 'rails', '>= 4.2.0', '~> 4.2.6'
 
-  spec.add_development_dependency 'bundler',
+  spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'factory_girl'
   spec.add_development_dependency 'coveralls'
   spec.add_development_dependency 'database_cleaner'
