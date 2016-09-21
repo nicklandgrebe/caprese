@@ -11,4 +11,7 @@ script:
   - bundle exec rake db:test:prepare
   - bundle exec rake
 before_script:
-  - cp config/database.travis.yml config/database.yml
+  - cp spec/dummy/config/database.travis.yml spec/dummy/config/database.yml
+
+notifications:
+  email: false
