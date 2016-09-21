@@ -1,3 +1,3 @@
-sqlite: &sqlite
+test:
   adapter: sqlite3
   database: db/<%= Rails.env %>.sqlite3
