@@ -222,17 +222,17 @@ module Caprese
         @primary = []
         @included = []
         @resource_identifiers = Set.new
-        serializers.each { |serializer| process_resource(serializer, true) }
+        serializers.each { |serializer| process_resource(serializer, true, @include_directive) }
         serializers.each { |serializer| process_relationships(serializer, @include_directive) }
 
         [@primary, @included]
       end
 
-      def process_resource(serializer, primary)
+      def process_resource(serializer, primary, included_associations)
         resource_identifier = ResourceIdentifier.new(serializer, instance_options).as_json
         return false unless @resource_identifiers.add?(resource_identifier)
 
-        resource_object = resource_object_for(serializer)
+        resource_object = resource_object_for(serializer, included_associations)
         if primary
           @primary << resource_object
         else
@@ -254,7 +254,7 @@ module Caprese
           return
         end
         return unless serializer && serializer.object
-        return unless process_resource(serializer, false)
+        return unless process_resource(serializer, false, include_directive)
 
         process_relationships(serializer, include_directive)
       end
@@ -280,7 +280,7 @@ module Caprese
       end
 
       # {http://jsonapi.org/format/#document-resource-objects Document Resource Objects}
-      def resource_object_for(serializer)
+      def resource_object_for(serializer, included_associations)
         resource_object = serializer.fetch(self) do
           resource_object = ResourceIdentifier.new(serializer, instance_options).as_json
 
@@ -291,7 +291,7 @@ module Caprese
         end
 
         requested_associations = fieldset.fields_for(resource_object[:type]) || '*'
-        relationships = relationships_for(serializer, requested_associations)
+        relationships = relationships_for(serializer, requested_associations, included_associations)
         resource_object[:relationships] = relationships if relationships.any?
 
         links = links_for(serializer)
@@ -419,13 +419,18 @@ module Caprese
       #     id: 'required-id',
       #     meta: meta
       #   }.reject! {|_,v| v.nil? }
-      def relationships_for(serializer, requested_associations)
+      def relationships_for(serializer, requested_associations, included_associations)
         include_directive = JSONAPI::IncludeDirective.new(
           requested_associations,
           allow_wildcard: true
         )
         serializer.associations(include_directive).each_with_object({}) do |association, hash|
-          hash[association.key] = Relationship.new(serializer, instance_options, association).as_json
+          hash[association.key] = Relationship.new(
+            serializer,
+            instance_options,
+            association,
+            included_associations
+          ).as_json
         end
       end
 

@@ -160,5 +160,47 @@ describe 'Querying resources', type: :request do
         end
       end
     end
+
+    context 'when optimizing relationships' do
+      before { Caprese.config.optimize_relationships = true }
+
+      before { get "/api/v1/comments/#{comments.first.id}#{query_str}" }
+
+      context 'when association included' do
+        subject(:query_str) { '?include=post' }
+
+        it 'serializes the relationship data' do
+          expect(json['data']['relationships']['post']['data']).not_to be_nil
+        end
+      end
+
+      context 'when association not included' do
+        subject(:query_str) { '' }
+
+        it 'does not serialize the relationship data' do
+          expect(json['data']['relationships']['post']['data']).to be_nil
+        end
+      end
+
+      context 'when deep nesting' do
+        subject(:post_params) { json['included'].detect { |r| r['type'] == 'posts' } }
+
+        context 'when association included' do
+          subject(:query_str) { '?include=post.user' }
+
+          it 'serializes the relationship data' do
+            expect(post_params['relationships']['user']['data']).not_to be_nil
+          end
+        end
+
+        context 'when association not included' do
+          subject(:query_str) { '?include=post' }
+
+          it 'does not serialize the relationship data' do
+            expect(json['data']['relationships']['user']['data']).to be_nil
+          end
+        end
+      end
+    end
   end
 end
