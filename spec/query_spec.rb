@@ -109,7 +109,7 @@ describe 'Querying resources', type: :request do
 
   describe 'filtering' do
     it 'should return a correctly filtered collection' do
-      get "/api/v1/comments?filter[body]=#{comments.last.body}"
+      get "/api/v1/comments?filter[body]=#{URI.escape(comments.last.body)}"
       expect(json['data'].count).to eq(1)
       expect(json['data'].first['id']).to eq(comments.last.id.to_s)
     end
