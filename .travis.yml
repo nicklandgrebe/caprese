@@ -6,8 +6,10 @@ rvm:
 env:
   - DB=sqlite
 script:
+  - cd spec/dummy
   - RAILS_ENV=test bundle exec rake db:migrate --trace
   - bundle exec rake db:test:prepare
+  - cd ../..
   - bundle exec rake
 before_script:
   - cp spec/dummy/config/database.travis.yml spec/dummy/config/database.yml
