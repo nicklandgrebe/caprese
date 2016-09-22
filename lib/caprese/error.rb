@@ -45,8 +45,10 @@ module Caprese
             I18n.t("#{i18n_scope}.models.#{@model}.#{field}.#{code}", t)
           elsif i18n_set?("#{i18n_scope}.field.#{code}", t)
             I18n.t("#{i18n_scope}.field.#{code}", t)
-          else
+          elsif i18n_set? "#{i18n_scope}.#{code}", t
             I18n.t("#{i18n_scope}.#{code}", t)
+          else
+            code.to_s
           end
         else
           if i18n_set? "#{i18n_scope}.models.#{@model}.#{code}", t
@@ -62,8 +64,10 @@ module Caprese
           I18n.t("#{i18n_scope}.controllers.#{@controller}.#{@action}.#{field}.#{code}", t)
         elsif i18n_set?("#{i18n_scope}.controllers.#{@controller}.#{@action}.#{code}", t)
           I18n.t("#{i18n_scope}.controllers.#{@controller}.#{@action}.#{code}", t)
-        else
+        elsif i18n_set? "#{i18n_scope}.#{code}", t
           I18n.t("#{i18n_scope}.#{code}", t)
+        else
+          code.to_s
         end
       elsif field && i18n_set?("#{i18n_scope}.field.#{code}", t)
         I18n.t("#{i18n_scope}.field.#{code}", t)
