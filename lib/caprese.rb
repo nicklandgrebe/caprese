@@ -18,11 +18,12 @@ module Caprese
   # Define URL options for use in UrlHelpers
   config.default_url_options ||= {}
 
+  # If true, links will be rendered as `only_path: true`
+  # TODO: Implement this
+  config.only_path_links ||= true
+
   # If true, relationship data will not be serialized unless it is in `include`
   config.optimize_relationships ||= true
-
-  # If true, links will be rendered as `only_path: true`
-  config.only_path_links ||= true
 
   # Defines the translation scope for model and controller errors
   config.i18n_scope ||= '' # 'api.v1.errors'
