@@ -81,12 +81,10 @@ module Caprese
     # @note We use the term scope, because the collection may be all records of that type,
     #   or the records may be scoped further by overriding this method
     #
-    # @note If no `type` is provided, the type is assumed to be the controller_record_class
-    #
     # @param [Symbol] type the type to get a record scope for
     # @return [Relation] the scope of records of type `type`
-    def record_scope(type = nil)
-      (type && record_class(type) || controller_record_class).all
+    def record_scope(type)
+      record_class(type).all
     end
 
     # Gets a record in a scope using a column/value to search by
@@ -170,7 +168,7 @@ module Caprese
     # @return [Relation] the record scope of the queried controller
     def queried_record_scope
       unless @queried_record_scope
-        scope = record_scope
+        scope = record_scope(unversion(params[:controller]).to_sym)
 
         if scope.any? && query_params[:filter].try(:any?)
           if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? k }).present?
