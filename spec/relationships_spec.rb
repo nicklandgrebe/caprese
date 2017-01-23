@@ -162,6 +162,10 @@ describe 'Managing relationships of resources', type: :request do
   end
 
   context 'retrieving relationship data' do
+    include Rails.application.routes.url_helpers
+
+    before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
+
     before { get "/api/v1/#{resource.class.name.downcase.pluralize}/#{resource.id}/#{relationship}" }
 
     context 'one-to-one' do

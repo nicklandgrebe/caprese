@@ -58,12 +58,14 @@ module Caprese
       links = { self: request.original_url }
 
       if !target.respond_to?(:to_ary) &&
-        respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
+        Rails.application.routes.url_helpers
+        .respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
 
         links[:related] =
-          send(
+          Rails.application.routes.url_helpers.send(
             related_url,
-            target.read_attribute(self.config.resource_primary_key)
+            target.read_attribute(self.config.resource_primary_key),
+            host: caprese_default_url_options_host
           )
       end
 
@@ -110,8 +112,15 @@ module Caprese
       links = { self: request.original_url }
 
       # Add related link for this relationship if it exists
-      if respond_to?(related_path = "relationship_data_#{version_name(unversion(params[:controller]).singularize)}_url")
-        links[:related] = send(related_path, params[:id], params[:relationship])
+      if Rails.application.routes.url_helpers
+        .respond_to?(related_path = "relationship_data_#{version_name(unversion(params[:controller]).singularize)}_url")
+
+        links[:related] = Rails.application.routes.url_helpers.send(
+          related_path,
+          params[:id],
+          params[:relationship],
+          host: caprese_default_url_options_host
+        )
       end
 
       target = queried_association.reader
@@ -245,6 +254,14 @@ module Caprese
       end
 
       @queried_association
+    end
+
+    # Fetches the host from Caprese.config.default_url_options or fails if it is not set
+    # @note default_url_options[:host] is used to render the host in links that are serialized in the response
+    def caprese_default_url_options_host
+      Caprese.config.default_url_options.fetch(:host) do
+        fail 'Caprese requires that config.default_url_options[:host] be set when rendering links.'
+      end
     end
   end
 end
