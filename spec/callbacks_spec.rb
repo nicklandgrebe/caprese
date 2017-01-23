@@ -102,12 +102,16 @@ describe 'Requests with Callbacks', type: :request do
         query_params[:page] = { size: 1 }
       end
       API::ApplicationController.before_query(:set_page_size)
+
+      # Simulate CommentsController being loaded and inheriting from API::ApplicationController
+      API::ApplicationController.inherited(API::V1::CommentsController)
     end
 
     before { get '/api/v1/comments' }
 
     after do
       API::ApplicationController.instance_variable_set('@before_query_callbacks', [])
+      API::V1::CommentsController.instance_variable_set('@before_query_callbacks', [])
     end
 
     it 'executes the inherited callback' do
