@@ -17,7 +17,7 @@ describe 'Requests with Callbacks', type: :request do
       API::V1::CommentsController.instance_variable_set('@before_query_callbacks', [])
     end
 
-    before { get "/api/v1/comments/" }
+    before { get '/api/v1/comments/' }
 
     it 'executes the callback before querying' do
       expect(json['data'][0]['attributes']['body']).to eq(Comment.order(body: :desc).first.body)
@@ -89,6 +89,29 @@ describe 'Requests with Callbacks', type: :request do
 
     it 'executes the callback before creating' do
       expect(json['data']['attributes']['body']).to eq('')
+    end
+  end
+
+  describe 'on base controller' do
+    let!(:comments) do
+      create_list :comment, 3
+    end
+
+    before do
+      API::ApplicationController.send :define_method, :set_page_size do
+        query_params[:page] = { size: 1 }
+      end
+      API::ApplicationController.before_query(:set_page_size)
+    end
+
+    before { get '/api/v1/comments' }
+
+    after do
+      API::ApplicationController.instance_variable_set('@before_query_callbacks', [])
+    end
+
+    it 'executes the inherited callback' do
+      expect(json['data'].count).to eq(1)
     end
   end
 end

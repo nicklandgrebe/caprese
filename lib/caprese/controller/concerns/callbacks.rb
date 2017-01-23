@@ -49,10 +49,22 @@ module Caprese
         #
         # @param [Symbol,Array<Symbol>] callbacks the name(s) of callbacks to add to list of callbacks
         define_singleton_method method_name do |*callbacks|
-          unless (all_callbacks = self.instance_variable_get(instance_variable_name))
-            all_callbacks = self.instance_variable_set(instance_variable_name, [])
-          end
+          all_callbacks = self.instance_variable_get(instance_variable_name) || []
           all_callbacks.push *callbacks
+          self.instance_variable_set(instance_variable_name, all_callbacks)
+        end
+      end
+    end
+
+    module ClassMethods
+      # Is called when any controller class inherits from a parent controller, copying to the child controller
+      # all of the callbacks that have been stored in instance variables on the parent
+      #
+      # @param [Class] subclass the child class that is to inherit the callbacks
+      def inherited(subclass)
+        CALLBACKS.each do |method_name|
+          instance_variable_name = "@#{method_name}_callbacks"
+          subclass.instance_variable_set(instance_variable_name, instance_variable_get(instance_variable_name))
         end
       end
     end
