@@ -5,6 +5,8 @@ rvm:
   - 2.2.2
 env:
   - DB=sqlite
+  - "RAILS_VERSION=4.2.7"
+  - "RAILS_VERSION=5.0.1"
 script:
   - cd spec/dummy
   - RAILS_ENV=test bundle exec rake db:migrate --trace
