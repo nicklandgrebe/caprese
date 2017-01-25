@@ -26,6 +26,24 @@ describe 'Querying resources', type: :request do
     # TODO: Implement and spec only_path option
   end
 
+  describe 'type' do
+    before { get "/api/v1/#{resource.class.name.underscore.pluralize}/#{resource.id}" }
+
+    subject(:resource) { comments.first }
+
+    it 'uses the resource model name' do
+      expect(json['data']['type']).to eq('comments')
+    end
+
+    context 'when resource is serialized by parent resource model serializer' do
+      subject(:resource) { create :post, :with_attachments }
+
+      it 'uses the parent resource model name' do
+        expect(json['data']['relationships']['attachments']['data'][0]['type']).to eq('attachments')
+      end
+    end
+  end
+
   context 'when records do not exist' do
     let!(:nonexistent_id) { comments.first.id }
     before { Comment.destroy_all }

@@ -5,6 +5,7 @@ module API
 
       belongs_to :user
 
+      has_many :attachments
       has_many :comments
     end
   end
