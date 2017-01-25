@@ -9,5 +9,9 @@ module Caprese
     include Versioning
     include Links
     include Lookup
+
+    def json_key
+      unversion(self.class.name).gsub('Serializer', '').underscore
+    end
   end
 end

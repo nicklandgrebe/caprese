@@ -3,20 +3,16 @@ module Caprese
     class JsonApi
       class ResourceIdentifier
         def self.type_for(class_name, serializer_type = nil, transform_options = {})
-          if serializer_type
-            raw_type = serializer_type
-          else
-            inflection =
-              if ActiveModelSerializers.config.jsonapi_resource_type == :singular
-                :singularize
-              else
-                :pluralize
-              end
+          inflection =
+            if ActiveModelSerializers.config.jsonapi_resource_type == :singular
+              :singularize
+            else
+              :pluralize
+            end
 
-            raw_type = class_name.underscore
-            raw_type = ActiveSupport::Inflector.public_send(inflection, raw_type)
-            raw_type
-          end
+          raw_type = serializer_type || class_name.underscore
+          raw_type = ActiveSupport::Inflector.public_send(inflection, raw_type)
+
           JsonApi.send(:transform_key_casing!, raw_type, transform_options)
         end
 
@@ -37,7 +33,7 @@ module Caprese
         private
 
         def type_for(serializer, transform_options)
-          self.class.type_for(serializer.object.class.name, serializer._type, transform_options)
+          self.class.type_for(serializer.object.class.name, serializer.json_key, transform_options)
         end
 
         def id_for(serializer)
