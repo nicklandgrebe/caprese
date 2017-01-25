@@ -1,0 +1,10 @@
+  [1m[36mActiveRecord::SchemaMigration Load (0.3ms)[0m  [1mSELECT "schema_migrations".* FROM "schema_migrations"[0m
+Migrating to CreateAttachments (20170125204237)
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1mSELECT "schema_migrations".* FROM "schema_migrations"[0m
+Migrating to CreateAttachments (20170125204237)
+  [1m[35m (0.1ms)[0m  begin transaction
+DEPRECATION WARNING: `#timestamps` was called without specifying an option for `null`. In Rails 5, this behavior will change to `null: false`. You should manually specify `null: true` to prevent the behavior of your existing migrations from changing. (called from block in change at /Users/nicklandgrebe/dev/caprese/spec/dummy/db/migrate/20170125204237_create_attachments.rb:7)
+  [1m[36m (0.9ms)[0m  [1mCREATE TABLE "attachments" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar, "name" varchar, "post_id" integer, "created_at" datetime, "updated_at" datetime) [0m
+  [1m[35mSQL (18.2ms)[0m  INSERT INTO "schema_migrations" ("version") VALUES (?)  [["version", "20170125204237"]]
+  [1m[36m (1.2ms)[0m  [1mcommit transaction[0m
+  [1m[35mActiveRecord::SchemaMigration Load (0.2ms)[0m  SELECT "schema_migrations".* FROM "schema_migrations"
