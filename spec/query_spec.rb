@@ -9,8 +9,21 @@ describe 'Querying resources', type: :request do
   end
 
   it 'retrieves a collection' do
-    get "/api/v1/comments"
+    get '/api/v1/comments'
     expect(json['data']).to respond_to(:any?)
+  end
+
+  describe 'links' do
+    include Rails.application.routes.url_helpers
+
+    before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
+
+    it 'includes self link' do
+      get "/api/v1/comments/#{comments.first.id}"
+      expect(json['data']['links']['self']).to eq(api_v1_comment_url(comments.first))
+    end
+
+    # TODO: Implement and spec only_path option
   end
 
   context 'when records do not exist' do

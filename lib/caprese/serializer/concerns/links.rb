@@ -12,8 +12,14 @@ module Caprese
         #   object = Order<@token='asd27h'>
         #   links = { self: '/api/v1/orders/asd27hß' }
         link :self do
-          if respond_to?(url = serializer.version_name("#{object.class.name.underscore}_url"))
-            send(url, object.read_attribute(Caprese.config.resource_primary_key))
+          if Rails.application.routes.url_helpers
+            .respond_to?(url = serializer.version_name("#{object.class.name.underscore}_url"))
+
+            Rails.application.routes.url_helpers.send(
+              url,
+              object.read_attribute(Caprese.config.resource_primary_key),
+              host: serializer.send(:caprese_default_url_options_host)
+            )
           end
         end
       end
@@ -67,28 +73,40 @@ module Caprese
           Proc.new do |serializer|
             link :self do
               url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
-              if respond_to? url
-                send(
+              if Rails.application.routes.url_helpers.respond_to? url
+                Rails.application.routes.url_helpers.send(
                   url,
                   primary_key => object.read_attribute(primary_key),
-                  relationship: reflection_name
+                  relationship: reflection_name,
+                  host: serializer.send(:caprese_default_url_options_host)
                 )
               end
             end
 
             link :related do
               url = "relationship_data_#{serializer.version_name("#{object.class.name.underscore}_url")}"
-              if respond_to? url
-                send(
+              if Rails.application.routes.url_helpers.respond_to? url
+                Rails.application.routes.url_helpers.send(
                   url,
                   primary_key => object.read_attribute(primary_key),
-                  relationship: reflection_name
+                  relationship: reflection_name,
+                  host: serializer.send(:caprese_default_url_options_host)
                 )
               end
             end
 
             :nil
           end
+        end
+      end
+
+      private
+
+      # Fetches the host from Caprese.config.default_url_options or fails if it is not set
+      # @note default_url_options[:host] is used to render the host in links that are serialized in the response
+      def caprese_default_url_options_host
+        Caprese.config.default_url_options.fetch(:host) do
+          fail 'Caprese requires that config.default_url_options[:host] be set when rendering links.'
         end
       end
     end
