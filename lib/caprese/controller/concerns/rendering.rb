@@ -9,6 +9,7 @@ module Caprese
     # instead of requiring that they be explicity stated
     def render(options = {})
       options[:adapter] = Caprese::Adapter::JsonApi
+      options[:meta] = meta unless meta.empty?
 
       if options[:json].respond_to?(:to_ary)
         if options[:json].first.is_a?(Error)
@@ -25,6 +26,16 @@ module Caprese
       end
 
       super
+    end
+
+    # Allows for meta tags to be added in response document
+    #
+    # @example
+    #   meta[:redirect_url] = ...
+    #
+    # @return [Hash] the meta tag object
+    def meta
+      @caprese_meta ||= {}
     end
 
     private

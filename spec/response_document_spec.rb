@@ -21,6 +21,27 @@ describe 'Resource document structure', type: :request do
     end
   end
 
+  describe 'meta' do
+    before do
+      API::V1::CommentsController.send :define_method, :add_meta_tag do
+        meta[:tag_1] = 100
+        meta[:tag_2] = 'tagged'
+      end
+      API::V1::CommentsController.before_query(:add_meta_tag)
+    end
+
+    after do
+      API::V1::CommentsController.instance_variable_set('@before_query_callbacks', [])
+    end
+
+    before { get '/api/v1/comments/' }
+
+    it 'adds meta tags to the response document' do
+      expect(json['meta']['tag_1']).to eq(100)
+      expect(json['meta']['tag_2']).to eq('tagged')
+    end
+  end
+
   describe 'links' do
     include Rails.application.routes.url_helpers
 
