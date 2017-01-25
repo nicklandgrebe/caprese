@@ -34,10 +34,15 @@ module Caprese
     # @example
     #   serializer_for(post) => API::V1::PostSerializer
     #
+    # @note The reason this method is a duplicate of Caprese::Serializer.serializer_for is
+    #   because the latter is only ever called from children of Caprese::Serializer, like those
+    #   in the API::V1:: scope. If we tried to use that method instead of this one, we end up
+    #   with Caprese::[record.class.name]Serializer instead of the proper versioned serializer
+    #
     # @param [ActiveRecord::Base] record the record to find a serializer for
     # @return [Serializer,Nil] the serializer for the given record
     def serializer_for(record)
-      version_module("#{record.class.name}Serializer").constantize
+      version_module("#{record.class.name}Serializer").constantize if Serializer.valid_for_serialization(record)
     end
   end
 end

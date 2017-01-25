@@ -14,7 +14,23 @@ module Caprese
         # @param [Hash] options options for `super` to use when getting the serializer
         # @return [Serializer,Nil] the serializer for the given record
         def serializer_for(record, options = {})
-          get_serializer_for(record.class) || super
+          return ActiveModel::Serializer::CollectionSerializer if record.respond_to?(:to_ary)
+
+          get_serializer_for(record.class) if valid_for_serialization(record)
+        end
+
+        # Indicates whether or not the record specified can be serialized by Caprese
+        #
+        # @note The only requirement right now is that the record model has Caprese::Record included
+        #
+        # @param [Object] record the record to check if is valid for serialization
+        # @return [True] this method either returns true, or fails - breaking control flow
+        def valid_for_serialization(record)
+          if record && !record.class.included_modules.include?(Caprese::Record)
+            fail 'All models managed by Caprese must include Caprese::Record'
+          end
+
+          true
         end
 
         private
