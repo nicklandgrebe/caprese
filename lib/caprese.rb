@@ -23,7 +23,7 @@ module Caprese
   config.only_path_links ||= true
 
   # If true, relationship data will not be serialized unless it is in `include`
-  config.optimize_relationships ||= true
+  config.optimize_relationships ||= false
 
   # Defines the translation scope for model and controller errors
   config.i18n_scope ||= '' # 'api.v1.errors'
