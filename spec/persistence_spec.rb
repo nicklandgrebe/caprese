@@ -67,21 +67,43 @@ describe 'Requests that persist data', type: :request do
     end
 
     context 'when relationships are invalid' do
-      subject(:attributes) do
-        {
-          body: 'unique_body'
-        }
+      context 'attributes' do
+        subject(:attributes) do
+          {
+            body: 'unique_body'
+          }
+        end
+
+        subject(:relationships) do
+          {
+            post: { data: { type: 'posts', id: resource.id + 10000 } },
+            user: { data: { type: 'users', id: user.id } }
+          }
+        end
+
+        it 'fails with errors' do
+          expect(json['errors'][0]['code']).to eq('not_found')
+        end
       end
 
-      subject(:relationships) do
-        {
-          post: { data: { type: 'posts', id: resource.id + 10000 } },
-          user: { data: { type: 'users', id: user.id } }
-        }
-      end
+      context 'type' do
+        subject(:attributes) do
+          {
+            body: 'unique_body'
+          }
+        end
 
-      it 'fails to create the record with errors' do
-        expect(json['errors'][0]['code']).to eq('not_found')
+        subject(:relationships) do
+          {
+            post: { data: { id: resource.id } },
+            user: { data: { type: 'users', id: user.id } }
+          }
+        end
+
+        # TODO: Change to '/data/relationships/post/data' when refactoring source pointer determination
+        it 'fails with error' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post')
+        end
       end
     end
 
@@ -121,33 +143,56 @@ describe 'Requests that persist data', type: :request do
         expect(Comment.first.post.user).to eq(user)
       end
 
-      context 'when attributes of nested association are invalid' do
-        subject(:relationships) do
-          {
-            user: { data: { type: 'users', id: user.id } },
-            post: {
-              data: {
-                type: 'posts',
-                attributes: {
-                  title: 'A post title'
-                },
-                relationships: {
-                  user: {
-                    data: {
-                      type: 'users',
-                      attributes: {
-                        name: ''
+      context 'when nested relationship of relationship is invalid' do
+        context 'autosaving' do
+          subject(:relationships) do
+            {
+              user: { data: { type: 'users', id: user.id } },
+              post: {
+                data: {
+                  type: 'posts',
+                  attributes: {
+                    title: 'A post title'
+                  },
+                  relationships: {
+                    user: {
+                      data: {
+                        type: 'users',
+                        attributes: {
+                          name: ''
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
+          end
+
+          it 'correctly points to the attribute that caused the error' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/relationships/user/data/attributes/name')
+          end
         end
 
-        it 'correctly points to the attribute that caused the error' do
-          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/relationships/user/data/attributes/name')
+        context 'validates_associated' do
+          subject(:relationships) do
+            {
+              user: { data: { type: 'users', id: user.id } },
+              post: { data: { type: 'posts', id: resource.id } },
+              rating: {
+                data: {
+                  type: 'ratings',
+                  attributes: {
+                    value: nil
+                  }
+                }
+              }
+            }
+          end
+
+          it 'correctly points to the attribute that caused the error' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/rating/data/attributes/value')
+          end
         end
       end
     end

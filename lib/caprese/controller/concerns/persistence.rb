@@ -73,7 +73,7 @@ module Caprese
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      fail RecordInvalidError.new(record) if record.errors.any?
+      fail RecordInvalidError.new(queried_record) if queried_record.errors.any?
 
       queried_record.save!
 
@@ -270,21 +270,29 @@ module Caprese
     # @param [Hash] resource_identifier the resource identifier for the resource
     # @return [ActiveRecord::Base] the found or built resource for the relationship
     def record_for_relationship(owner, relationship_name, resource_identifier)
-      record =
+      if resource_identifier[:type]
+        # { type: '...', id: '...' }
         if (id = resource_identifier[Caprese.config.resource_primary_key])
           get_record!(
             resource_identifier[:type],
             Caprese.config.resource_primary_key,
             id
           )
+
+        # { type: '...', attributes: { ... } }
         elsif contains_constructable_data?(resource_identifier)
           record_scope(resource_identifier[:type]).build
+
+        # { type: '...' }
         else
           owner.errors.add(relationship_name)
           nil
         end
-
-      record
+      else
+        # { id: '...' } && { attributes: { ... } }
+        owner.errors.add(relationship_name)
+        nil
+      end
     end
 
     # Assigns permitted attributes for a record in a relationship, for a given action
