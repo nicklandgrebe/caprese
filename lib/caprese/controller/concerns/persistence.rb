@@ -35,27 +35,18 @@ module Caprese
     #
     # @note For this action to succeed, the given controller must define `create_params`
     #   @see #create_params
-    #
-    # 1. Check that type of record to be created matches type that the given controller manages
-    # 2. Build the appropriate attributes/associations for the create action
-    # 3. Build a record with the attributes
-    # 4. Execute after_initialize callbacks
-    # 5. Execute before_create callbacks
-    # 6. Execute before_save callbacks
-    # 7. Create the record by saving it (or fail with RecordInvalid and render errors)
-    # 8. Execute after_create callbacks
-    # 9. Execute after_save callbacks
-    # 10. Return the created resource with 204 Created
-    #    @see #rescue_from ActiveRecord::RecordInvalid
     def create
       fail_on_type_mismatch(data_params[:type])
 
       record = queried_record_scope.build
       assign_record_attributes(record, permitted_params_for(:create), data_params)
+
       execute_after_initialize_callbacks(record)
 
       execute_before_create_callbacks(record)
       execute_before_save_callbacks(record)
+
+      fail RecordInvalidError.new(record) if record.errors.any?
 
       record.save!
 
@@ -74,22 +65,16 @@ module Caprese
     #
     # @note For this action to succeed, the given controller must define `update_params`
     #   @see #update_params
-    #
-    # 1. Check that type of record to be updated matches type that the given controller manages
-    # 2. Execute before_update callbacks
-    # 3. Execute before_save callbacks
-    # 4. Update the record (or fail with RecordInvalid and render errors)
-    # 5. Execute after_update callbacks
-    # 6. Execute after_save callbacks
-    # 7. Return the updated resource
-    #    @see #rescue_from ActiveRecord::RecordInvalid
     def update
       fail_on_type_mismatch(data_params[:type])
+
+      assign_record_attributes(queried_record, permitted_params_for(:update), data_params)
 
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      assign_record_attributes(queried_record, permitted_params_for(:update), data_params)
+      fail RecordInvalidError.new(record) if record.errors.any?
+
       queried_record.save!
 
       execute_after_update_callbacks(queried_record)

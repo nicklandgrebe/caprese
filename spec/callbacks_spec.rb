@@ -67,7 +67,7 @@ describe 'Requests with Callbacks', type: :request do
     end
 
     after do
-      API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
+      API::V1::CommentsController.instance_variable_set('@after_create_callbacks', [])
     end
 
     before { post "/api/v1/#{type}/", { data: data } }
@@ -116,6 +116,42 @@ describe 'Requests with Callbacks', type: :request do
 
     it 'executes the inherited callback' do
       expect(json['data'].count).to eq(1)
+    end
+  end
+
+  describe 'invalidation' do
+    context 'if there is an error added in callbacks' do
+      before do
+        API::V1::CommentsController.send :define_method, :add_error do |resource|
+          resource.errors.add(:body)
+        end
+        API::V1::CommentsController.before_create(:add_error)
+      end
+
+      after do
+        API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
+      end
+
+      before { post "/api/v1/#{type}/", { data: data } }
+
+      subject(:data) do
+        output = { type: type }
+        output.merge!(attributes: attributes)
+        output.merge!(relationships: relationships)
+      end
+
+      subject(:type) { 'comments' }
+      subject(:attributes) { { body: 'One body' } }
+      subject(:relationships) do
+        {
+          user: { data: { type: 'users', id: create(:user).id } },
+          post: { data: { type: 'posts', id: create(:post).id } }
+        }
+      end
+
+      it 'responds with 422' do
+        expect(response.status).to eq(422)
+      end
     end
   end
 end
