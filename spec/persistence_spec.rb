@@ -67,21 +67,43 @@ describe 'Requests that persist data', type: :request do
     end
 
     context 'when relationships are invalid' do
-      subject(:attributes) do
-        {
-          body: 'unique_body'
-        }
+      context 'attributes' do
+        subject(:attributes) do
+          {
+            body: 'unique_body'
+          }
+        end
+
+        subject(:relationships) do
+          {
+            post: { data: { type: 'posts', id: resource.id + 10000 } },
+            user: { data: { type: 'users', id: user.id } }
+          }
+        end
+
+        it 'fails with errors' do
+          expect(json['errors'][0]['code']).to eq('not_found')
+        end
       end
 
-      subject(:relationships) do
-        {
-          post: { data: { type: 'posts', id: resource.id + 10000 } },
-          user: { data: { type: 'users', id: user.id } }
-        }
-      end
+      context 'type' do
+        subject(:attributes) do
+          {
+            body: 'unique_body'
+          }
+        end
 
-      it 'fails to create the record with errors' do
-        expect(json['errors'][0]['code']).to eq('not_found')
+        subject(:relationships) do
+          {
+            post: { data: { id: resource.id } },
+            user: { data: { type: 'users', id: user.id } }
+          }
+        end
+
+        # TODO: Change to '/data/relationships/post/data' when refactoring source pointer determination
+        it 'fails with error' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post')
+        end
       end
     end
 
