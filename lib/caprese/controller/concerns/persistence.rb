@@ -73,7 +73,7 @@ module Caprese
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      fail RecordInvalidError.new(record) if record.errors.any?
+      fail RecordInvalidError.new(queried_record) if queried_record.errors.any?
 
       queried_record.save!
 
