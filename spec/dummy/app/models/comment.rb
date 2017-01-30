@@ -5,4 +5,6 @@ class Comment < ApplicationRecord
   has_one :rating
 
   validates_presence_of :body
+
+  validates_associated :rating
 end
