@@ -2,6 +2,7 @@ require 'active_model'
 require 'active_support/concern'
 require 'active_support/dependencies'
 require 'caprese/errors'
+require 'caprese/record/associated_validator'
 require 'caprese/record/errors'
 
 module Caprese
