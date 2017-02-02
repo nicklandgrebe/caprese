@@ -21,8 +21,8 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.1'
 
-  spec.add_dependency 'active_model_serializers', '0.10.2'
-  spec.add_dependency 'kaminari', '0.17.0'
+  spec.add_dependency 'active_model_serializers', '~> 0.10.0'
+  spec.add_dependency 'kaminari', '~> 0.16.0'
   spec.add_dependency 'rails', '>= 4.2.0'
 
   spec.add_development_dependency 'bundler'

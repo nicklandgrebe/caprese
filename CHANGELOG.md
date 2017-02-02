@@ -6,3 +6,7 @@
 * Allow editing of meta tag document
 * Modify `validates_associated` to propagate nested association errors to the record itself
 * Fail with `422 Unprocessable Entity` if any callbacks add an error to a record being persisted or updated
+
+## 0.3.1
+
+* Remove strict dependencies
