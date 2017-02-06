@@ -29,6 +29,10 @@ module Caprese
         # serializer
         def has_many(name, options = {}, &block)
           super name, options, &build_association_block(name)
+
+          define_method name do
+            self.relationship_scope(name, object.send(name))
+          end
         end
 
         # @see has_many

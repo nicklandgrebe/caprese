@@ -56,6 +56,37 @@ describe 'Resource document structure', type: :request do
   end
 
   describe 'relationships' do
+    context 'when scoping relationships' do
+      let(:post) { create :post }
+      let!(:comments)       { create_list :comment, 2, post: post, user: post.user }
+      let!(:other_comments) { create_list :comment, 1, post: post, user: create(:user) }
+
+      before do
+        API::V1::PostSerializer.instance_eval do
+          define_method :relationship_scope do |name, scope|
+            case name
+            when :comments
+              scope.where(user: object.user)
+            else
+              scope
+            end
+          end
+        end
+      end
+
+      after do
+        API::V1::PostSerializer.instance_eval do
+          remove_method :relationship_scope
+        end
+      end
+
+      before { get "/api/v1/posts/#{post.id}?include=comments" }
+
+      it 'only includes scoped relationship items' do
+        expect(json['included'].count).to eq(2)
+      end
+    end
+
     context 'when optimizing relationships' do
       before { Caprese.config.optimize_relationships = true }
       after { Caprese.config.optimize_relationships = false }
