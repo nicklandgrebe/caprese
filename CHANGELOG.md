@@ -10,3 +10,7 @@
 ## 0.3.1
 
 * Remove strict dependencies
+
+## 0.3.2
+
+* Allow scoping of `has_many` relationships in serializers, i.e. when the relationship is included in another primary document
