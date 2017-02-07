@@ -14,3 +14,7 @@
 ## 0.3.2
 
 * Allow scoping of `has_many` relationships in serializers, i.e. when the relationship is included in another primary document
+
+## 0.3.3
+
+* Depend on all route primary key URL params to be named `:id`, rather than `Caprese.config.resource_primary_key`
