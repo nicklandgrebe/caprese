@@ -274,7 +274,7 @@ module Caprese
     def record_for_relationship(owner, relationship_name, resource_identifier)
       if resource_identifier[:type]
         # { type: '...', id: '...' }
-        if (id = resource_identifier[Caprese.config.resource_primary_key])
+        if (id = resource_identifier[:id])
           get_record!(
             resource_identifier[:type],
             Caprese.config.resource_primary_key,
