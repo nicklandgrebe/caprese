@@ -27,3 +27,7 @@
 ## 0.3.5
 
 * Ensure that `record_scope` is always provided a symbol as an argument (c61ac0d)
+
+## 0.3.6
+
+* Only allow resource identifiers in request documents to use `id` for primary key (JSON API adherent) (93c90eb)
