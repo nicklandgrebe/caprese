@@ -18,3 +18,8 @@
 ## 0.3.3
 
 * Depend on all route primary key URL params to be named `:id`, rather than `Caprese.config.resource_primary_key`
+
+## 0.3.4
+
+* Fix bug in processing of collection relationship data (5e21582)
+* Fix bug in persisting of collection relationship data on create (1eb4720)
