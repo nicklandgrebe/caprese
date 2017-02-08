@@ -7,7 +7,7 @@ module Caprese
         POINTERS = {
           attribute:    '/data/attributes/%s'.freeze,
           relationship: '/data/relationships/%s'.freeze,
-          primary_data: '/data%s'.freeze
+          primary_data: '/data/%s'.freeze
         }.freeze
 
         # Iterates over the field of an error and converts it to a pointer in JSON API format

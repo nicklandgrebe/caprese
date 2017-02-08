@@ -95,7 +95,12 @@ module Caprese
         def self.error_source(source_type, record, attribute_name)
           case source_type
           when :pointer
-            if record.has_attribute?(attribute_name)
+            # [type ...] and other primary data variables
+            if %w(type).include?(attribute_name)
+              {
+                pointer: JsonApi::JsonPointer.new(:primary_data, record, attribute_name)
+              }
+            elsif record.has_attribute?(attribute_name)
               {
                 pointer: JsonApi::JsonPointer.new(:attribute, record, attribute_name)
               }
