@@ -283,7 +283,7 @@ module Caprese
 
         # { type: '...', attributes: { ... } }
         elsif contains_constructable_data?(resource_identifier)
-          record_scope(resource_identifier[:type]).build
+          record_scope(resource_identifier[:type].to_sym).build
 
         # { type: '...' }
         else

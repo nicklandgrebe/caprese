@@ -100,7 +100,7 @@ module Caprese
     # @param [Value] value the value to match to a column/row value
     # @return [APIRecord] the record that was found
     def get_record(scope, column, value)
-      scope = record_scope(scope) unless scope.respond_to?(:find_by)
+      scope = record_scope(scope.to_sym) unless scope.respond_to?(:find_by)
 
       scope.find_by(column => value)
     end
@@ -110,7 +110,7 @@ module Caprese
     #
     # @see get_record
     def get_record!(scope, column, value)
-      scope = record_scope(scope) unless scope.respond_to?(:find_by!)
+      scope = record_scope(scope.to_sym) unless scope.respond_to?(:find_by!)
 
       begin
         scope.find_by!(column => value)
