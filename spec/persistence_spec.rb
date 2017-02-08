@@ -49,6 +49,35 @@ describe 'Requests that persist data', type: :request do
         expect(Comment.last.post).to eq(resource)
         expect(Comment.last.user).to eq(user)
       end
+
+      context 'when has_many field' do
+        subject(:type) { 'posts' }
+        let!(:comments) { create_list :comment, 2 }
+
+        subject(:attributes) do
+          {
+            title: 'unique_title'
+          }
+        end
+
+        subject(:relationships) do
+          {
+            comments: { data: [
+              { type: 'comments', id: comments[0].id },
+              { type: 'comments', id: comments[1].id }
+            ]},
+          }
+        end
+
+        it 'creates the record' do
+          expect(Post.last.comments.count).to eq(2)
+        end
+
+        it 'assigns relationships' do
+          expect(Comment.last(2)[0].post).to eq(Post.last)
+          expect(Comment.last(2)[1].post).to eq(Post.last)
+        end
+      end
     end
 
     context 'when attributes are invalid' do

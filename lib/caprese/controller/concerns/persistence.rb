@@ -242,12 +242,12 @@ module Caprese
     # @param [Hash,Array<Hash>] relationship_data the resource identifier data to use to find/build records
     # @return [ActiveRecord::Base,Array<ActiveRecord::Base>] the record(s) for the relationship
     def records_for_relationship(owner, permitted_params, relationship_name, relationship_data)
-      if relationship_data.is_a?(Array)
-        relationship_data.map do |relationship_data_item|
-          ref = record_for_relationship(owner, relationship_name, relationship_data_item[:data])
+      if relationship_data[:data].is_a?(Array)
+        relationship_data[:data].map do |relationship_data_item|
+          ref = record_for_relationship(owner, relationship_name, relationship_data_item)
 
-          if ref && contains_constructable_data?(relationship_data_item[:data])
-            assign_record_attributes(ref, permitted_params, relationship_data_item[:data])
+          if ref && contains_constructable_data?(relationship_data_item)
+            assign_record_attributes(ref, permitted_params, relationship_data_item)
           end
 
           ref
