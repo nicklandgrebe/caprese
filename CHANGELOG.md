@@ -23,3 +23,7 @@
 
 * Fix bug in processing of collection relationship data (5e21582)
 * Fix bug in persisting of collection relationship data on create (1eb4720)
+
+## 0.3.5
+
+* Ensure that `record_scope` is always provided a symbol as an argument (c61ac0d)
