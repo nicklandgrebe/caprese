@@ -50,6 +50,8 @@ module Caprese
 
       record.save!
 
+      persist_collection_relationships(record)
+
       execute_after_create_callbacks(record)
       execute_after_save_callbacks(record)
 
@@ -315,6 +317,26 @@ module Caprese
     # @return [Boolean] whether or not the resource identifier contains constructable data
     def contains_constructable_data?(resource_identifier)
       [:attributes, :relationships].any? { |k| resource_identifier.key?(k) }
+    end
+
+    # Called in create, after the record is saved. When creating a new record, and assigning to it
+    # existing has_many association relation, the records in the relation will be pushed onto the
+    # appropriate target, but the relationship will not be persisted in their attributes until their
+    # owner is saved.
+    #
+    # This methods persists the collection relation(s) pushed onto the record's association target(s)
+    def persist_collection_relationships(record)
+      record.class.reflect_on_all_associations
+      .select { |ref| ref.collection? && record.association(ref.name).any? }
+      .map do |ref|
+        [
+          ref.has_inverse? ? ref.inverse_of.name : ref.options[:as],
+          record.association(ref.name).target
+        ]
+      end
+      .to_h.each do |name, targets|
+        targets.each { |t| t.update name => record }
+      end
     end
   end
 end
