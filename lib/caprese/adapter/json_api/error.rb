@@ -89,11 +89,12 @@ module Caprese
         #       parameter: 'pres'
         #     }
         #   end
+        RESERVED_ATTRIBUTES = %w(type)
         def self.error_source(source_type, record, attribute_name)
           case source_type
           when :pointer
             # [type ...] and other primary data variables
-            if %w(type).include?(attribute_name)
+            if RESERVED_ATTRIBUTES.include?(attribute_name.to_s)
               {
                 pointer: JsonApi::JsonPointer.new(:primary_data, record, attribute_name)
               }
@@ -101,13 +102,19 @@ module Caprese
               {
                 pointer: JsonApi::JsonPointer.new(:attribute, record, attribute_name)
               }
-            elsif attribute_name.to_s.split('.').size > 1
-              {
-                pointer: JsonApi::JsonPointer.new(:relationship_attribute, record, attribute_name)
-              }
+            elsif (relationship_data_items = attribute_name.to_s.split('.')).size > 1
+              if RESERVED_ATTRIBUTES.include?(relationship_data_items.last)
+                {
+                  pointer: JsonApi::JsonPointer.new(:relationship_primary_data, record, relationship_data_items)
+                }
+              else
+                {
+                  pointer: JsonApi::JsonPointer.new(:relationship_attribute, record, attribute_name)
+                }
+              end
             else
               {
-                pointer: JsonApi::JsonPointer.new(:relationship, record, attribute_name)
+                pointer: JsonApi::JsonPointer.new(:relationship_base, record, attribute_name)
               }
             end
           when :parameter

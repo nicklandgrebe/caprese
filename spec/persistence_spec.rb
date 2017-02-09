@@ -15,68 +15,75 @@ describe 'Requests that persist data', type: :request do
     end
 
     subject(:type) { 'comments' }
+    subject(:data_type) { type }
     subject(:attributes) { {} }
     subject(:relationships) { {} }
     subject(:data) do
-      output = { type: type }
+      output = { type: data_type }
       output.merge!(attributes: attributes)
       output.merge!(relationships: relationships)
     end
 
-    context 'when fields are valid' do
+    subject(:attributes) do
+      {
+        body: 'unique_body'
+      }
+    end
+
+    subject(:relationships) do
+      {
+        user: { data: { type: 'users', id: user.id } },
+        post: { data: { type: 'posts', id: resource.id } }
+      }
+    end
+
+    it 'creates the record' do
+      expect(Comment.count).to eq(1)
+    end
+
+    it 'assigns attributes' do
+      expect(Comment.last.body).to eq('unique_body')
+    end
+
+    it 'assigns relationships' do
+      expect(Comment.last.post).to eq(resource)
+      expect(Comment.last.user).to eq(user)
+    end
+
+    context 'when has_many field' do
+      subject(:type) { 'posts' }
+      let!(:comments) { create_list :comment, 2 }
+
       subject(:attributes) do
         {
-          body: 'unique_body'
+          title: 'unique_title'
         }
       end
 
       subject(:relationships) do
         {
-          user: { data: { type: 'users', id: user.id } },
-          post: { data: { type: 'posts', id: resource.id } }
+          comments: { data: [
+            { type: 'comments', id: comments[0].id },
+            { type: 'comments', id: comments[1].id }
+          ]},
         }
       end
 
       it 'creates the record' do
-        expect(Comment.count).to eq(1)
-      end
-
-      it 'assigns attributes' do
-        expect(Comment.last.body).to eq('unique_body')
+        expect(Post.last.comments.count).to eq(2)
       end
 
       it 'assigns relationships' do
-        expect(Comment.last.post).to eq(resource)
-        expect(Comment.last.user).to eq(user)
+        expect(Comment.last(2)[0].post).to eq(Post.last)
+        expect(Comment.last(2)[1].post).to eq(Post.last)
       end
+    end
 
-      context 'when has_many field' do
-        subject(:type) { 'posts' }
-        let!(:comments) { create_list :comment, 2 }
+    context 'when type is invalid' do
+      subject(:data_type) { '' }
 
-        subject(:attributes) do
-          {
-            title: 'unique_title'
-          }
-        end
-
-        subject(:relationships) do
-          {
-            comments: { data: [
-              { type: 'comments', id: comments[0].id },
-              { type: 'comments', id: comments[1].id }
-            ]},
-          }
-        end
-
-        it 'creates the record' do
-          expect(Post.last.comments.count).to eq(2)
-        end
-
-        it 'assigns relationships' do
-          expect(Comment.last(2)[0].post).to eq(Post.last)
-          expect(Comment.last(2)[1].post).to eq(Post.last)
-        end
+      it 'responds with primary data error' do
+        expect(json['errors'][0]['source']).to eq({ 'pointer' => '/data/type' })
       end
     end
 
@@ -129,9 +136,8 @@ describe 'Requests that persist data', type: :request do
           }
         end
 
-        # TODO: Change to '/data/relationships/post/data' when refactoring source pointer determination
         it 'fails with error' do
-          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post')
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/type')
         end
       end
     end
