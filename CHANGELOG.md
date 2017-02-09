@@ -35,3 +35,7 @@
 ## 0.3.7
 
 * Completes error source pointer determination to include primary data items and relationship primary data items
+
+## 0.3.8
+
+* Use default value provided in options arg of errors.add before retrieving the value from the record (0ed5a3e)
