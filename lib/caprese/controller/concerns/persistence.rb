@@ -292,7 +292,7 @@ module Caprese
         end
       else
         # { id: '...' } && { attributes: { ... } }
-        owner.errors.add(relationship_name)
+        owner.errors.add("#{relationship_name}.type")
         nil
       end
     end

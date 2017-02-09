@@ -7,6 +7,17 @@ module Caprese
         # rubocop:disable Style/AsciiComments
         UnknownSourceTypeError = Class.new(ArgumentError)
 
+        def self.param_errors(error_serializer, options)
+          error_attributes = error_serializer.as_json
+          [
+            {
+              code: error_attributes[:code],
+              detail: error_attributes[:message],
+              source: error_source(:parameter, nil, error_attributes[:field])
+            }
+          ]
+        end
+
         # Builds a JSON API Errors Object
         # {http://jsonapi.org/format/#errors JSON API Errors}
         #
@@ -18,20 +29,6 @@ module Caprese
               options)
             attribute_error_objects(error_serializer.object.record, attribute_name, attribute_errors)
           end
-        end
-
-        # FIXME: param_errors implies multiple errors, but since we use a fail first
-        # strategy, there will only be one param error ever, as reflected by this method's
-        # definition
-        def self.param_errors(error_serializer, options)
-          error_attributes = error_serializer.as_json
-          [
-            {
-              code: error_attributes[:code],
-              detail: error_attributes[:message],
-              source: error_source(:parameter, nil, error_attributes[:field])
-            }
-          ]
         end
 
         # definition:
@@ -92,20 +89,32 @@ module Caprese
         #       parameter: 'pres'
         #     }
         #   end
+        RESERVED_ATTRIBUTES = %w(type)
         def self.error_source(source_type, record, attribute_name)
           case source_type
           when :pointer
-            if record.has_attribute?(attribute_name)
+            # [type ...] and other primary data variables
+            if RESERVED_ATTRIBUTES.include?(attribute_name.to_s)
+              {
+                pointer: JsonApi::JsonPointer.new(:primary_data, record, attribute_name)
+              }
+            elsif record.has_attribute?(attribute_name)
               {
                 pointer: JsonApi::JsonPointer.new(:attribute, record, attribute_name)
               }
-            elsif attribute_name.to_s.split('.').size > 1
-              {
-                pointer: JsonApi::JsonPointer.new(:relationship_attribute, record, attribute_name)
-              }
+            elsif (relationship_data_items = attribute_name.to_s.split('.')).size > 1
+              if RESERVED_ATTRIBUTES.include?(relationship_data_items.last)
+                {
+                  pointer: JsonApi::JsonPointer.new(:relationship_primary_data, record, relationship_data_items)
+                }
+              else
+                {
+                  pointer: JsonApi::JsonPointer.new(:relationship_attribute, record, attribute_name)
+                }
+              end
             else
               {
-                pointer: JsonApi::JsonPointer.new(:relationship, record, attribute_name)
+                pointer: JsonApi::JsonPointer.new(:relationship_base, record, attribute_name)
               }
             end
           when :parameter

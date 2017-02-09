@@ -58,12 +58,4 @@ module Caprese
       @header = { status: :forbidden }
     end
   end
-
-  # Thrown when an attempt was made to create a record of type that is different than the type
-  # of the controller that the data was sent to
-  class InvalidTypeError < Error
-    def initialize(type)
-      super code: :invalid_type, t: { type: type }
-    end
-  end
 end

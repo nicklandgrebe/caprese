@@ -27,12 +27,22 @@ module Caprese
     end
 
     # Checks if a given type mismatches the controller type
-    # @note Throws :invalid_type error if true
     #
     # @param [String] type the pluralized type to check ('products','orders',etc.)
     def fail_on_type_mismatch(type)
-      unless record_class(type) == controller_record_class
-        fail InvalidTypeError.new(type)
+      failed = false
+
+      begin
+        failed = record_class(type) != controller_record_class
+      rescue NameError
+        failed = true
+      end
+
+      if failed
+        invalid_typed_record = controller_record_class.new
+        invalid_typed_record.errors.add(:type)
+
+        fail RecordInvalidError.new(invalid_typed_record)
       end
     end
   end
