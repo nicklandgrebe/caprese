@@ -38,4 +38,8 @@
 
 ## 0.3.8
 
-* Use default value provided in options arg of errors.add before retrieving the value from the record (0ed5a3e)
+* Use default value provided in `options` arg of errors.add before retrieving the value from the record (0ed5a3e)
+
+## 0.3.8.1
+
+* Use default value provided in `t` of `options` arg of errors.add before determining by other means (f3ad88e)
