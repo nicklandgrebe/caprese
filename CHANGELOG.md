@@ -31,3 +31,7 @@
 ## 0.3.6
 
 * Only allow resource identifiers in request documents to use `id` for primary key (JSON API adherent) (93c90eb)
+
+## 0.3.7
+
+* Completes error source pointer determination to include primary data items and relationship primary data items
