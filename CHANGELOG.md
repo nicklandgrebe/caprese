@@ -43,3 +43,7 @@
 ## 0.3.8.1
 
 * Use default value provided in `t` of `options` arg of errors.add before determining by other means (f3ad88e)
+
+## 0.3.8.2
+
+* Fix rendering of nested relationship base errors (17dc96f)
