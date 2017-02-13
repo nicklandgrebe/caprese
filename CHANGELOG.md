@@ -47,3 +47,7 @@
 ## 0.3.8.2
 
 * Fix rendering of nested relationship base errors (17dc96f)
+
+## 0.3.8.3
+
+* Fix `persist_collection_relationships` to not include `through` relationships
