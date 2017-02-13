@@ -31,7 +31,10 @@ module Caprese
         # @param [Object,Array<Object>]
         def new(pointer_type, record, value)
           if pointer_type == :relationship_attribute
-            value.to_s.split('.').inject('') do |pointer, v|
+            values = value.to_s.split('.')
+            last_index = values.count - 1
+
+            values.each_with_index.inject('') do |pointer, (v, i)|
               pointer +
                 if record.class.reflections.key?(v)
                   record =
@@ -41,7 +44,11 @@ module Caprese
                       record.send(v)
                     end
 
-                  format(POINTERS[:relationship_attribute], v)
+                  if i == last_index
+                    format(POINTERS[:relationship_base], v)
+                  else
+                    format(POINTERS[:relationship_attribute], v)
+                  end
                 else
                   format(POINTERS[:attribute], v)
                 end
