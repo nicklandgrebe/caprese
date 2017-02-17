@@ -103,7 +103,7 @@ describe 'Requests that persist data', type: :request do
     end
 
     context 'when relationships are invalid' do
-      context 'attributes' do
+      context 'id' do
         subject(:attributes) do
           {
             body: 'unique_body'

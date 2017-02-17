@@ -275,11 +275,16 @@ module Caprese
       if resource_identifier[:type]
         # { type: '...', id: '...' }
         if (id = resource_identifier[:id])
-          get_record!(
-            resource_identifier[:type],
-            Caprese.config.resource_primary_key,
-            id
-          )
+          begin
+            get_record!(
+              resource_identifier[:type],
+              Caprese.config.resource_primary_key,
+              id
+            )
+          rescue Caprese::RecordNotFoundError => e
+            owner.errors.add(relationship_name, :not_found, t: { value: id })
+            nil
+          end
 
         # { type: '...', attributes: { ... } }
         elsif contains_constructable_data?(resource_identifier)
