@@ -51,3 +51,7 @@
 ## 0.3.8.4
 
 * Fix `persist_collection_relationships` to not include `through` relationships
+
+## 0.3.9
+
+* Add relationship not_found errors to record instead of throwing parameter error (f4b7415)
