@@ -21,3 +21,11 @@
 
 en:
   hello: "Hello world"
+  api:
+    v1:
+      errors:
+        models:
+          comment:
+            rating:
+              value:
+                invalid: Test value %{custom_val}

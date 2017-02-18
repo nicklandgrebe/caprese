@@ -18,7 +18,7 @@ module Caprese
         Array(value).reject { |r| r.marked_for_destruction? || r.valid? }.each do |invalid_record|
           invalid_record.errors.to_a.each do |error|
             field_name = error.field ? "#{attribute}.#{error.field}" : attribute
-            record.errors.add(field_name, error.code, options.merge(value: invalid_record))
+            record.errors.add(field_name, error.code, { t: error.t }.merge(value: invalid_record))
           end
         end
       end

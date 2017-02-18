@@ -228,6 +228,10 @@ describe 'Requests that persist data', type: :request do
           it 'correctly points to the attribute that caused the error' do
             expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/rating/data/attributes/value')
           end
+
+          it 'propagates nested error options' do
+            expect(json['errors'][0]['detail']).to eq(I18n.t('api.v1.errors.models.comment.rating.value.invalid', custom_val: '123'))
+          end
         end
       end
     end
