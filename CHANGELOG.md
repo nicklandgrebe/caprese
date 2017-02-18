@@ -55,3 +55,7 @@
 ## 0.3.9
 
 * Add relationship not_found errors to record instead of throwing parameter error (f4b7415)
+
+## 0.3.10
+
+* Propagate translation options on nested error to parent when validates_associated (2178fbd)
