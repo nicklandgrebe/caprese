@@ -113,7 +113,7 @@ module Caprese
       scope = record_scope(scope.to_sym) unless scope.respond_to?(:find_by!)
 
       begin
-        scope.find_by!(column => value) unless scope.empty?
+        scope.find_by!(column => value) unless scope.is_a?(Array) && scope.empty?
       rescue ActiveRecord::RecordNotFound => e
         fail RecordNotFoundError.new(
           field: column,
