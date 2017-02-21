@@ -13,6 +13,34 @@ describe 'Querying resources', type: :request do
     expect(json['data']).to respond_to(:any?)
   end
 
+  describe '#record_scope' do
+    context 'when scope provided is []' do
+      before do
+        API::V1::CommentsController.instance_eval do
+          define_method :record_scope do |type|
+            case type
+            when :comments
+              []
+            else
+              scope
+            end
+          end
+        end
+      end
+
+      after do
+        API::V1::CommentsController.instance_eval do
+          remove_method :record_scope
+        end
+      end
+
+      it 'responds with empty collection' do
+        get "/api/v1/comments"
+        expect(json['data'].count).to eq(0)
+      end
+    end
+  end
+
   context 'when records do not exist' do
     let!(:nonexistent_id) { comments.first.id }
     before { Comment.destroy_all }
