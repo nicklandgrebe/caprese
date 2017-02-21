@@ -59,3 +59,7 @@
 ## 0.3.10
 
 * Propagate translation options on nested error to parent when validates_associated (2178fbd)
+
+## 0.3.11
+
+* Allow `record_scope` and `relationship_scope` to return `[]`
