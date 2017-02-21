@@ -102,7 +102,7 @@ module Caprese
     def get_record(scope, column, value)
       scope = record_scope(scope.to_sym) unless scope.respond_to?(:find_by)
 
-      scope.find_by(column => value)
+      scope.find_by(column => value) unless scope.empty?
     end
 
     # Gets a record in a scope using a column/value to search by
@@ -113,7 +113,7 @@ module Caprese
       scope = record_scope(scope.to_sym) unless scope.respond_to?(:find_by!)
 
       begin
-        scope.find_by!(column => value)
+        scope.find_by!(column => value) unless scope.empty?
       rescue ActiveRecord::RecordNotFound => e
         fail RecordNotFoundError.new(
           field: column,
@@ -128,6 +128,8 @@ module Caprese
     # @param [Relation] scope the scope to apply sorting and pagination to
     # @return [Relation] the sorted and paginated scope
     def apply_sorting_pagination_to_scope(scope)
+      return scope if scope.empty?
+
       if query_params[:sort].try(:any?)
         ordering = {}
         query_params[:sort].each do |sort_field|
