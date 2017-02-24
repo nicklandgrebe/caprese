@@ -193,8 +193,8 @@ module Caprese
       @queried_record ||=
         get_record!(
           queried_record_scope,
-          column = self.config.resource_primary_key,
-          params[column]
+          self.config.resource_primary_key,
+          params[:id]
         )
     end
 
