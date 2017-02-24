@@ -67,3 +67,7 @@
 ## 0.3.12
 
 * Refactor RecordNotFoundError and AssociationNotFoundError to use separate `parameter` translations
+
+## 0.3.13
+
+* Fix bug where `queried_record` uses primary key other than `:id`
