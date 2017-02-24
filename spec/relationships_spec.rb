@@ -32,6 +32,10 @@ describe 'Managing relationships of resources', type: :request do
       it 'responds with 404' do
         expect(response.status).to eq(404)
       end
+
+      it 'responds with appropriate message' do
+        expect(json['errors'][0]['detail']).to eq("Could not find relationship with name: 'invalid'")
+      end
     end
   end
 

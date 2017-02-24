@@ -29,3 +29,5 @@ en:
             rating:
               value:
                 invalid: Test value %{custom_val}
+        parameters:
+          not_found: "Could not find %{model} with %{field}: '%{value}'"

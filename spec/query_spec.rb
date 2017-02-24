@@ -45,14 +45,23 @@ describe 'Querying resources', type: :request do
     let!(:nonexistent_id) { comments.first.id }
     before { Comment.destroy_all }
 
-    it 'returns for 404 for a resource query' do
-      get "/api/v1/comments/#{nonexistent_id}"
-      expect(response.status).to eq(404)
+    context '/:id' do
+      before { get "/api/v1/comments/#{nonexistent_id}" }
+
+      it 'responds with 404' do
+        expect(response.status).to eq(404)
+      end
+
+      it 'responds with appropriate message' do
+        expect(json['errors'][0]['detail']).to eq("Could not find comment with id: '#{nonexistent_id}'")
+      end
     end
 
-    it 'returns an empty collection for a collection query' do
-      get "/api/v1/comments"
-      expect(json['data']).to be_empty
+    context '/' do
+      it 'returns an empty collection' do
+        get '/api/v1/comments'
+        expect(json['data']).to be_empty
+      end
     end
   end
 

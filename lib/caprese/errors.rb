@@ -24,9 +24,13 @@ module Caprese
   # @param [String] model the name of the model we searched for a record of
   # @param [Value] value the value we searched for a match with
   class RecordNotFoundError < Error
-    def initialize(field: :id, model: nil, value: nil)
-      super field: field, code: :not_found, t: { model: model, value: value }
+    def initialize(model: nil, value: nil)
+      super field: :id, code: :not_found, t: { model: model, value: value }
       @header = { status: :not_found }
+    end
+
+    def full_message
+      I18n.t("#{i18n_scope}.parameters.not_found", t)
     end
   end
 
@@ -35,8 +39,12 @@ module Caprese
   # @param [String] name the name of the association
   class AssociationNotFoundError < Error
     def initialize(name)
-      super field: name, code: :association_not_found
+      super field: :name, code: :not_found, t: { model: 'relationship', value: name }
       @header = { status: :not_found }
+    end
+
+    def full_message
+      I18n.t("#{i18n_scope}.parameters.not_found", t)
     end
   end
 

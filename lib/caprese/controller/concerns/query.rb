@@ -116,7 +116,6 @@ module Caprese
         scope.find_by!(column => value) unless scope.is_a?(Array) && scope.empty?
       rescue ActiveRecord::RecordNotFound => e
         fail RecordNotFoundError.new(
-          field: column,
           model: scope.name.underscore,
           value: value
         )
