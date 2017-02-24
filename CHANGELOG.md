@@ -63,3 +63,7 @@
 ## 0.3.11
 
 * Allow `record_scope` and `relationship_scope` to return `[]`
+
+## 0.3.12
+
+* Refactor RecordNotFoundError and AssociationNotFoundError to use separate `parameter` translations
