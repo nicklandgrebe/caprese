@@ -71,3 +71,7 @@
 ## 0.3.13
 
 * Fix bug where `queried_record` uses primary key other than `:id`
+
+## 0.3.14
+
+* Add `caprese_is_attribute?` attribute aliasing helper
