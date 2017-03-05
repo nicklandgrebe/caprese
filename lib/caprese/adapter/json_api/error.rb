@@ -98,7 +98,7 @@ module Caprese
               {
                 pointer: JsonApi::JsonPointer.new(:primary_data, record, attribute_name)
               }
-            elsif record.has_attribute?(attribute_name)
+            elsif record.has_attribute?(attribute_name) || record.caprese_is_attribute?(attribute_name)
               {
                 pointer: JsonApi::JsonPointer.new(:attribute, record, attribute_name)
               }

@@ -130,4 +130,33 @@ describe 'Resource document structure', type: :request do
       end
     end
   end
+
+  describe 'attribute aliasing' do
+    before do
+      Comment.instance_eval do
+        define_method :caprese_is_attribute? do |name|
+          %w(not_attribute).include?(name.to_s)
+        end
+      end
+
+      API::V1::CommentsController.send :define_method, :add_error do |resource|
+        resource.errors.add(:not_attribute, :blank)
+      end
+      API::V1::CommentsController.before_create(:add_error)
+    end
+
+    after do
+      API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
+
+      Comment.instance_eval do
+        remove_method :caprese_is_attribute?
+      end
+    end
+
+    before { post '/api/v1/comments', { data: { type: 'comments' } } }
+
+    it 'indicates that the alias is an attribute' do
+      expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/not_attribute')
+    end
+  end
 end
