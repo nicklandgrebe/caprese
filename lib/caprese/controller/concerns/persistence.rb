@@ -233,7 +233,11 @@ module Caprese
         )
       end
 
-      attributes.each { |k, v| record.send("#{k}=", v) }
+      if record.respond_to?(:assign_attributes)
+        record.assign_attributes(attributes)
+      else
+        attributes.each { |k, v| record.send("#{k}=", v) }
+      end
     end
 
     # Gets all the records for a relationship given a relationship data definition
