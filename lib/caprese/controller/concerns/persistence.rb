@@ -233,7 +233,7 @@ module Caprese
         )
       end
 
-      record.assign_attributes(attributes)
+      attributes.each { |k, v| record.send("#{k}=", v) }
     end
 
     # Gets all the records for a relationship given a relationship data definition
