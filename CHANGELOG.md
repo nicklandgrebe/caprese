@@ -75,3 +75,7 @@
 ## 0.3.14
 
 * Add `caprese_is_attribute?` attribute aliasing helper
+
+## 0.3.15
+
+* Remove dependency on `ActiveRecord#assign_attributes`
