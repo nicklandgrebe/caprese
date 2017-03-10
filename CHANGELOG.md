@@ -79,3 +79,7 @@
 ## 0.3.15
 
 * Remove dependency on `ActiveRecord#assign_attributes`
+
+## 0.3.15.1
+
+* Allow calling of `assign_attributes` if the record `responds_to` it
