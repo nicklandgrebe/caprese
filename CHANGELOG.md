@@ -83,3 +83,7 @@
 ## 0.3.15.1
 
 * Allow calling of `assign_attributes` if the record `responds_to` it
+
+## 0.3.16
+
+* Only use `Caprese::Record::AssociatedValidator` if `caprese_style_errors`
