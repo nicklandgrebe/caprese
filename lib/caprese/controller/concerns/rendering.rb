@@ -1,5 +1,6 @@
 require 'active_support/concern'
 require 'caprese/adapter/json_api'
+require 'caprese/serializer'
 
 module Caprese
   module Rendering
@@ -53,7 +54,20 @@ module Caprese
     # @param [ActiveRecord::Base] record the record to find a serializer for
     # @return [Serializer,Nil] the serializer for the given record
     def serializer_for(record)
-      version_module("#{record.class.name}Serializer").constantize if Serializer.valid_for_serialization(record)
+      get_serializer_for(record.class) if Serializer.valid_for_serialization(record)
+    end
+
+    # Gets a serializer for a klass, either as the serializer explicitly defined
+    # for this class, or as a serializer defined for one of the klass's parents
+    #
+    # @param [Class] klass the klass to get the serializer for
+    # @return [Serializer] the serializer for the class
+    def get_serializer_for(klass)
+      begin
+        version_module("#{klass.name}Serializer").constantize
+      rescue NameError => e
+        get_serializer_for(klass.superclass) if klass.superclass
+      end
     end
   end
 end
