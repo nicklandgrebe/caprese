@@ -91,3 +91,7 @@
 ## 0.3.17
 
 * Update rendering concern serializer_for to resemble Serializer.serializer_for
+
+## 0.3.18
+
+* Allow serialized data links to use parent class links
