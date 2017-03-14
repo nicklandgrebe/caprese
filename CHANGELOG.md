@@ -87,3 +87,7 @@
 ## 0.3.16
 
 * Only use `Caprese::Record::AssociatedValidator` if `caprese_style_errors`
+
+## 0.3.17
+
+* Update rendering concern serializer_for to resemble Serializer.serializer_for
