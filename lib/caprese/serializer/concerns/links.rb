@@ -12,19 +12,25 @@ module Caprese
         #   object = Order<@token='asd27h'>
         #   links = { self: '/api/v1/orders/asd27hß' }
         link :self do
-          if Rails.application.routes.url_helpers
-            .respond_to?(url = serializer.version_name("#{object.class.name.underscore}_url"))
-
+          if(url = serializer.class.route_for(object))
             Rails.application.routes.url_helpers.send(
               url,
               object.read_attribute(Caprese.config.resource_primary_key),
-              host: serializer.send(:caprese_default_url_options_host)
+              host: serializer.class.send(:caprese_default_url_options_host)
             )
           end
         end
       end
 
       module ClassMethods
+        # Fetches the host from Caprese.config.default_url_options or fails if it is not set
+        # @note default_url_options[:host] is used to render the host in links that are serialized in the response
+        def caprese_default_url_options_host
+          Caprese.config.default_url_options.fetch(:host) do
+            fail 'Caprese requires that config.default_url_options[:host] be set when rendering links.'
+          end
+        end
+
         # Overridden so we can define relationship links without any code in a specific
         # serializer
         def has_many(name, options = {}, &block)
@@ -82,7 +88,7 @@ module Caprese
                   url,
                   id: object.read_attribute(primary_key),
                   relationship: reflection_name,
-                  host: serializer.send(:caprese_default_url_options_host)
+                  host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end
             end
@@ -94,23 +100,13 @@ module Caprese
                   url,
                   id: object.read_attribute(primary_key),
                   relationship: reflection_name,
-                  host: serializer.send(:caprese_default_url_options_host)
+                  host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end
             end
 
             :nil
           end
-        end
-      end
-
-      private
-
-      # Fetches the host from Caprese.config.default_url_options or fails if it is not set
-      # @note default_url_options[:host] is used to render the host in links that are serialized in the response
-      def caprese_default_url_options_host
-        Caprese.config.default_url_options.fetch(:host) do
-          fail 'Caprese requires that config.default_url_options[:host] be set when rendering links.'
         end
       end
     end

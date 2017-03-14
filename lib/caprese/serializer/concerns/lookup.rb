@@ -8,7 +8,7 @@ module Caprese
       module ClassMethods
         # Gets a versioned serializer for a given record
         #
-        # @note Overrides the default since the default does not do namespaced lookup
+        # @note Overrides the AMS default since the default does not do namespaced lookup
         #
         # @param [ActiveRecord::Base] record the record to get a serializer for
         # @param [Hash] options options for `super` to use when getting the serializer
@@ -33,6 +33,18 @@ module Caprese
           true
         end
 
+        # Gets a versioned route for a given record
+        #
+        # @param [ActiveRecord::Base] record the record to get a route for
+        # @return [String,Nil] the route for the given record
+        def route_for(record)
+          return nil unless record
+
+          get_route_for(record.class)
+        end
+
+        # TODO: Add route_for_relationship
+
         private
 
         # Gets a serializer for a klass, either as the serializer explicitly defined
@@ -46,6 +58,23 @@ module Caprese
           rescue NameError => e
             get_serializer_for(klass.superclass) if klass.superclass
           end
+        end
+
+        # Gets a route for a klass, either as the serializer explicitly defined
+        # for this class, or as a route defined for one of the klass's parents
+        #
+        # @param [Class] klass the klass to get the serializer for
+        # @return [String] the route for the class
+        def get_route_for(klass)
+          output = nil
+          while klass.superclass do
+            if Rails.application.routes.url_helpers.respond_to?(url = version_name("#{klass.name.underscore}_url"))
+              output = url
+              break
+            end
+            klass = klass.superclass
+          end
+          output
         end
       end
     end

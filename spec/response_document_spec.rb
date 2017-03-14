@@ -47,12 +47,25 @@ describe 'Resource document structure', type: :request do
 
     before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
 
+    before { get "/api/v1/#{resource_path}/#{resource.id}" }
+
+    subject(:resource) { comments.first }
+    let(:resource_path) { resource.class.name.underscore.pluralize }
+
     it 'includes self link' do
-      get "/api/v1/comments/#{comments.first.id}"
-      expect(json['data']['links']['self']).to eq(api_v1_comment_url(comments.first))
+      expect(json['data']['links']['self']).to eq(api_v1_comment_url(resource))
     end
 
     # TODO: Implement and spec only_path option
+
+    context 'when resource is serialized by parent resource model serializer' do
+      subject(:resource) { create :image }
+      let(:resource_path) { 'attachments' }
+
+      it 'uses the parent resource model link' do
+        expect(json['data']['links']['self']).to eq(api_v1_attachment_url(resource))
+      end
+    end
   end
 
   describe 'relationships' do
