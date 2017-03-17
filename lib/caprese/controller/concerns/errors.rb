@@ -12,6 +12,7 @@ module Caprese
       rescue_from Error do |e|
         output = { json: e }
         render output.merge(e.header)
+        Caprese::Record.caprese_style_errors = false
       end
     end
 
