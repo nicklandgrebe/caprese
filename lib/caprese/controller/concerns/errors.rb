@@ -9,10 +9,15 @@ module Caprese
     included do
       around_action :enable_caprese_style_errors
 
-      rescue_from Error do |e|
-        output = { json: e }
-        render output.merge(e.header)
+      rescue_from Exception do |e|
         Caprese::Record.caprese_style_errors = false
+
+        if e.is_a?(Caprese::Error)
+          output = { json: e }
+          render output.merge(e.header)
+        else
+          fail e
+        end
       end
     end
 
