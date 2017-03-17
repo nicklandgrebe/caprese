@@ -99,3 +99,7 @@
 ## 0.3.19
 
 * Set `::Record.caprese_style_errors` to false when rendering errors, because around_action is not finalized
+
+## 0.3.19.1
+
+* Rescue `Exception` temporarily, so we can always turn off `caprese_style_errors`
