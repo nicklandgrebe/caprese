@@ -95,3 +95,7 @@
 ## 0.3.18
 
 * Allow serialized data links to use parent class links
+
+## 0.3.19
+
+* Set `::Record.caprese_style_errors` to false when rendering errors, because around_action is not finalized
