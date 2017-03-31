@@ -103,3 +103,7 @@
 ## 0.3.19.1
 
 * Rescue `Exception` temporarily, so we can always turn off `caprese_style_errors`
+
+## 0.3.19.2
+
+* Fix rendering of non-JSON actions
