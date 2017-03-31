@@ -3,6 +3,18 @@ require 'spec_helper'
 describe 'Resource document structure', type: :request do
   let!(:comments) { create_list :comment, 1 }
 
+  describe 'non-JSON url' do
+    before { get "/api/v1/static" }
+
+    it 'responds' do
+      expect(response.status).to eq(200)
+    end
+
+    it 'does not force a JSON resource document' do
+      expect { json }.to raise_error(JSON::ParserError)
+    end
+  end
+
   describe 'type' do
     before { get "/api/v1/#{resource.class.name.underscore.pluralize}/#{resource.id}" }
 
