@@ -13,7 +13,7 @@ module Caprese
     include Relationships
 
     def json_key
-      unversion(self.class.name).gsub('Serializer', '').underscore
+      object.caprese_type
     end
   end
 end
