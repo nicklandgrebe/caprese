@@ -247,7 +247,7 @@ module Caprese
     def queried_association
       unless @queried_association
         begin
-          @queried_association = queried_record.association(params[:relationship])
+          @queried_association = queried_record.association(actual_field(params[:relationship]))
         rescue ActiveRecord::AssociationNotFoundError => e
           fail AssociationNotFoundError.new(params[:relationship])
         end
