@@ -12,6 +12,14 @@ module Caprese
         false
       end
 
+      # Checks that any field provided is either an attribute on the record, or an aliased field, or none
+      #
+      # @param [String,Symbol] field the field to check for on this record
+      # @return [Boolean] whether or not the field is on the record
+      def caprese_is_field?(field)
+        respond_to?(field = field.to_sym) || caprese_is_attribute?(field) || caprese_field_aliases[field]
+      end
+
       module ClassMethods
         # Provides the ability to display an aliased field name to the consumer of the API, and then map that name
         # to its real name on the server
