@@ -24,7 +24,7 @@ module Caprese
 
         e = Error.new(
           model: @base.class.name.underscore.downcase,
-          field: attribute == :base ? nil : aliased_attribute_name(attribute),
+          field: attribute == :base ? nil : @base.caprese_aliased_field(attribute),
           code: code,
           t: options[:t]
         )
@@ -76,16 +76,6 @@ module Caprese
             [field, Array.wrap(errors).map { |e| e.as_json }]
           end
         ]
-      end
-
-      # Given an actual attribute_name, convert to its appropriate field alias for the class
-      # @note The reason this is useful is because ActiveRecord validations must validate the actual attribute name of a
-      #   model, but when we add errors they should always have aliased fields
-      #
-      # @param [String,Symbol] attribute_name the actual attribute name to alias
-      # @return [Symbol] the aliased attribute name, or the original name symbolized
-      def aliased_attribute_name(attribute_name)
-        @base.class.caprese_field_aliases.invert[attribute_name = attribute_name.to_sym] || attribute_name
       end
     end
   end
