@@ -27,7 +27,7 @@ module Caprese
     module ClassMethods
       def validates_associated(*attr_names)
         validates_with(
-          (Caprese::Record.caprese_style_errors ? Caprese::Record : ActiveModel::Validations)::AssociatedValidator,
+          (Caprese::Record.caprese_style_errors ? Caprese::Record : ActiveRecord::Validations)::AssociatedValidator,
           _merge_attributes(attr_names)
         )
       end
