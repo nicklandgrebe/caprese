@@ -87,7 +87,7 @@ module Caprese
                 Rails.application.routes.url_helpers.send(
                   url,
                   id: object.read_attribute(primary_key),
-                  relationship: reflection_name,
+                  relationship: object.caprese_alias_field(reflection_name),
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end
@@ -99,7 +99,7 @@ module Caprese
                 Rails.application.routes.url_helpers.send(
                   url,
                   id: object.read_attribute(primary_key),
-                  relationship: reflection_name,
+                  relationship: object.caprese_alias_field(reflection_name),
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end

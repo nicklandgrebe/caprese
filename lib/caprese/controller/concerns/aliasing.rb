@@ -29,7 +29,7 @@ module Caprese
     # @param [Class] klass the klass to get field aliases for
     # @return [Symbol] the actual field name for the field requested
     def actual_field(field, klass = controller_record_class)
-      klass.caprese_field_aliases[field = field.to_sym].try(:to_sym) || field
+      klass.caprese_unalias_field[field = field.to_sym]
     end
 
     # Takes in a set of possibly aliased includes and converts them to their actual names

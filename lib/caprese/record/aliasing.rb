@@ -20,20 +20,22 @@ module Caprese
         respond_to?(field = field.to_sym) || caprese_is_attribute?(field) || caprese_field_aliases[field]
       end
 
-      # Given an actual attribute_name, convert to its appropriate field alias for the class
-      # @note The reason this is useful is because ActiveRecord validations must validate the actual attribute name of a
+      # Given an actual field, convert to its appropriate field alias for the class
+      # @note The reason this is useful is because ActiveRecord validations must validate the actual field name of a
       #   model, but when we add errors they should always have aliased fields
       #
-      # @param [String,Symbol] attribute_name the actual attribute name to alias
-      # @return [Symbol] the aliased attribute name, or the original name symbolized
-      def caprese_aliased_field(field)
-        if self.class.caprese_field_aliases.invert[field = field.to_sym]
-          true
-        elsif respond_to?(field)
-          field
-        else
-          raise "#{field} is not an actual or aliased field on #{self.class.name}."
-        end
+      # @param [String,Symbol] field the actual field name to alias
+      # @return [Symbol] the aliased field name, or the original name symbolized
+      def caprese_alias_field(field)
+        self.class.caprese_field_aliases.invert[field = field.to_sym] || field
+      end
+
+      # Given an aliased field, convert to its actual field for the class
+      #
+      # @param [String,Symbol] field the actual field name to alias
+      # @return [Symbol] the aliased field name, or the original name symbolized
+      def caprese_unalias_field(field)
+        self.class.caprese_field_aliases[field = field.to_sym] || field
       end
 
       module ClassMethods
