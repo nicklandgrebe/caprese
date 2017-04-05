@@ -107,3 +107,7 @@
 ## 0.3.19.2
 
 * Fix rendering of non-JSON actions
+
+## 0.3.19.3
+
+* Fix use of `ActiveRecord::Validations::AssociatedValidator` in `Caprese::AssociatedValidator`
