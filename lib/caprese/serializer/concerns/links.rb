@@ -80,6 +80,8 @@ module Caprese
         def build_association_block(reflection_name)
           primary_key = Caprese.config.resource_primary_key
 
+          reflection_name = reflection_name.to_sym
+
           Proc.new do |serializer|
             link :self do
               url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"

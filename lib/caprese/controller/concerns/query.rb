@@ -134,9 +134,9 @@ module Caprese
         query_params[:sort].each do |sort_field|
           ordering = ordering.merge(
             if sort_field[0] == '-' # EX: -created_at, sort by created_at descending
-              { sort_field[1..-1] => :desc }
+              { actual_field(sort_field[1..-1]) => :desc }
             else
-              { sort_field => :asc }
+              { actual_field(sort_field) => :asc }
             end
           )
         end
@@ -172,9 +172,9 @@ module Caprese
         scope = record_scope(unversion(params[:controller]).to_sym)
 
         if scope.any? && query_params[:filter].try(:any?)
-          if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? k }).present?
+          if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k).to_s }).present?
             valid_filters.each do |k, v|
-              scope = scope.where(k => v)
+              scope = scope.where(actual_field(k) => v)
             end
           end
         end

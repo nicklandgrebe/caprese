@@ -3,13 +3,13 @@ require 'active_support/concern'
 require 'active_support/dependencies'
 require 'caprese/errors'
 require 'caprese/record/associated_validator'
-require 'caprese/record/attribute_aliasing'
+require 'caprese/record/aliasing'
 require 'caprese/record/errors'
 
 module Caprese
   module Record
     extend ActiveSupport::Concern
-    include AttributeAliasing
+    include Aliasing
 
     mattr_accessor :caprese_style_errors
     @@caprese_style_errors = true

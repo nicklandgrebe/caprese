@@ -16,7 +16,15 @@ module Caprese
     # @param [Symbol] type the record type to get the class for
     # @return [Class] the class for a given record type
     def record_class(type)
-      type.to_s.classify.constantize
+      begin
+        type.to_s.classify.constantize
+      rescue NameError => e
+        if resource_type_aliases[type.to_sym]
+          record_class(resource_type_aliases[type.to_sym].to_sym)
+        else
+          raise e
+        end
+      end
     end
 
     # Gets the record class for the current controller
