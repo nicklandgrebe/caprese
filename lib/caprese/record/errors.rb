@@ -24,7 +24,7 @@ module Caprese
 
         e = Error.new(
           model: @base.class.name.underscore.downcase,
-          field: attribute == :base ? nil : @base.caprese_aliased_field(attribute),
+          field: attribute == :base ? nil : @base.class.caprese_alias_field(attribute),
           code: code,
           t: options[:t]
         )

@@ -17,28 +17,28 @@ module Caprese
       # @param [String,Symbol] field the field to check for on this record
       # @return [Boolean] whether or not the field is on the record
       def caprese_is_field?(field)
-        respond_to?(field = field.to_sym) || caprese_is_attribute?(field) || caprese_field_aliases[field]
-      end
-
-      # Given an actual field, convert to its appropriate field alias for the class
-      # @note The reason this is useful is because ActiveRecord validations must validate the actual field name of a
-      #   model, but when we add errors they should always have aliased fields
-      #
-      # @param [String,Symbol] field the actual field name to alias
-      # @return [Symbol] the aliased field name, or the original name symbolized
-      def caprese_alias_field(field)
-        self.class.caprese_field_aliases.invert[field = field.to_sym] || field
-      end
-
-      # Given an aliased field, convert to its actual field for the class
-      #
-      # @param [String,Symbol] field the actual field name to alias
-      # @return [Symbol] the aliased field name, or the original name symbolized
-      def caprese_unalias_field(field)
-        self.class.caprese_field_aliases[field = field.to_sym] || field
+        respond_to?(field = field.to_sym) || caprese_is_attribute?(field) || self.class.caprese_field_aliases[field]
       end
 
       module ClassMethods
+        # Given an actual field, convert to its appropriate field alias for the class
+        # @note The reason this is useful is because ActiveRecord validations must validate the actual field name of a
+        #   model, but when we add errors they should always have aliased fields
+        #
+        # @param [String,Symbol] field the actual field name to alias
+        # @return [Symbol] the aliased field name, or the original name symbolized
+        def caprese_alias_field(field)
+          caprese_field_aliases.invert[field = field.to_sym] || field
+        end
+
+        # Given an aliased field, convert to its actual field for the class
+        #
+        # @param [String,Symbol] field the actual field name to alias
+        # @return [Symbol] the aliased field name, or the original name symbolized
+        def caprese_unalias_field(field)
+          caprese_field_aliases[field = field.to_sym] || field
+        end
+
         # Provides the ability to display an aliased field name to the consumer of the API, and then map that name
         # to its real name on the server
         # @example
