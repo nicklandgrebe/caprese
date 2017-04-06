@@ -80,6 +80,8 @@ module Caprese
         def build_association_block(reflection_name)
           primary_key = Caprese.config.resource_primary_key
 
+          reflection_name = reflection_name.to_sym
+
           Proc.new do |serializer|
             link :self do
               url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
@@ -87,7 +89,7 @@ module Caprese
                 Rails.application.routes.url_helpers.send(
                   url,
                   id: object.read_attribute(primary_key),
-                  relationship: object.caprese_alias_field(reflection_name),
+                  relationship: reflection_name,
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end
@@ -99,7 +101,7 @@ module Caprese
                 Rails.application.routes.url_helpers.send(
                   url,
                   id: object.read_attribute(primary_key),
-                  relationship: object.caprese_alias_field(reflection_name),
+                  relationship: reflection_name,
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )
               end
