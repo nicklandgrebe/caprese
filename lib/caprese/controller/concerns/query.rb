@@ -172,9 +172,9 @@ module Caprese
         scope = record_scope(unversion(params[:controller]).to_sym)
 
         if scope.any? && query_params[:filter].try(:any?)
-          if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k) }).present?
+          if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k).to_s }).present?
             valid_filters.each do |k, v|
-              scope = scope.where(actual_field_name(k) => v)
+              scope = scope.where(actual_field(k) => v)
             end
           end
         end

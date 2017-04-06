@@ -220,15 +220,20 @@ module Caprese
     # @param [Array] permitted_params the permitted params for the action
     # @param [Parameters] data the data sent to the server to construct and assign to the record
     def assign_record_attributes(record, permitted_params, data)
-      attributes = data[:attributes].try(:permit, *permitted_params).inject({}) do |out, (attr, val)|
+      attributes = data[:attributes].try(:permit, *permitted_params).try(:inject, {}) do |out, (attr, val)|
         out[actual_field(attr, record.class)] = val
         out
-      end
+      end || {}
 
       data[:relationships]
       .try(:slice, *flattened_keys_for(permitted_params))
       .try(:each) do |relationship_name, relationship_data|
-        attributes[actual_field(relationship_name, record.class)] = records_for_relationship(
+        actual_relationship_name = actual_field(relationship_name, record.class)
+
+        # TODO: Add checkme for relationship_name to ensure that format is correct (not Array when actually Record, vice versa)
+        #   No relationship exists as well
+
+        attributes[actual_relationship_name] = records_for_relationship(
           record,
           nested_params_for(relationship_name, permitted_params),
           relationship_name,

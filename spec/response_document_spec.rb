@@ -177,17 +177,26 @@ describe 'Resource document structure', type: :request do
     describe 'aliasing an attribute' do
       before do
         Comment.instance_eval do
-          define_method :caprese_field_aliases do
+          def caprese_field_aliases
             {
               content: :body
             }
           end
         end
+        API::V1::CommentSerializer.instance_eval do
+          attributes :content
+        end
       end
 
       after do
         Comment.instance_eval do
-          remove_method :caprese_field_aliases
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        API::V1::CommentSerializer.instance_eval do
+          self._attributes_data = _attributes_data.except(:content)
         end
       end
 
@@ -200,8 +209,9 @@ describe 'Resource document structure', type: :request do
         end
 
         context 'filtering' do
-          before { create :comment, body: '123456abc' }
-          let(:query_str) { '?filter[content]=123456abc' }
+          let(:filtered) { create :comment, body: '123456abc' }
+
+          let(:query_str) { "?filter[content]=#{filtered.body}" }
 
           it 'filters by alias' do
             expect(json['data'].count).to eq(1)
@@ -224,23 +234,23 @@ describe 'Resource document structure', type: :request do
           let(:query_str) { '?sort=-content' }
 
           it 'sorts by the aliased field' do
-            expect(json['data'].map { |c| c['id'] }).to match(Comment.order(body: :desc).ids)
+            expect(json['data'].map { |c| c['id'].to_i }).to match(Comment.order(body: :desc).ids)
           end
         end
       end
 
       describe 'post' do
         before do
-          API::V1::CommentsController.instance_eval do
-            define_method :permitted_create_params do
+          API::V1::CommentsController.class_eval do
+            def permitted_create_params
               [:content, :user, post: [:title, user: [:name]], rating: [:value]]
             end
           end
         end
 
         after do
-          API::V1::CommentsController.instance_eval do
-            define_method :permitted_create_params do
+          API::V1::CommentsController.class_eval do
+            def permitted_create_params
               [:body, :user, post: [:title, user: [:name]], rating: [:value]]
             end
           end
@@ -275,26 +285,47 @@ describe 'Resource document structure', type: :request do
     describe 'aliasing a relationship' do
       before do
         Comment.instance_eval do
-          define_method :caprese_field_aliases do
+          def caprese_field_aliases
             {
               article: :post
             }
           end
         end
+        API::V1::CommentSerializer.instance_eval do
+          belongs_to :article
+        end
       end
 
       after do
         Comment.instance_eval do
-          remove_method :caprese_field_aliases
+          def caprese_field_aliases
+            {}
+          end
+        end
+        API::V1::CommentSerializer.instance_eval do
+          self._reflections = _reflections.except(:article)
         end
       end
 
       describe 'get' do
+        include Rails.application.routes.url_helpers
+
+        before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
+
         before { get "/api/v1/comments#{query_str}" }
         let(:query_str) { '' }
 
         it 'aliases relationship' do
           expect(json['data'][0]['relationships']['article']).not_to be_nil
+        end
+
+        it 'aliases relationship links' do
+          expect(json['data'][0]['relationships']['article']['links']['self']).to eq(
+            relationship_definition_api_v1_comment_url(
+              comments.first,
+              relationship: 'article'
+            )
+          )
         end
 
         context 'include' do
@@ -308,17 +339,17 @@ describe 'Resource document structure', type: :request do
 
       describe 'post' do
         before do
-          API::V1::CommentsController.instance_eval do
-            define_method :permitted_create_params do
-              [:content, :user, article: [:title, user: [:name]], rating: [:value]]
+          API::V1::CommentsController.class_eval do
+            def permitted_create_params
+              [:body, :user, article: [:title, user: [:name]], rating: [:value]]
             end
           end
         end
 
         after do
-          API::V1::CommentsController.instance_eval do
-            define_method :permitted_create_params do
-              [:body, :user, article: [:title, user: [:name]], rating: [:value]]
+          API::V1::CommentsController.class_eval do
+            def permitted_create_params
+              [:body, :user, post: [:title, user: [:name]], rating: [:value]]
             end
           end
         end
@@ -334,7 +365,7 @@ describe 'Resource document structure', type: :request do
             },
             relationships: {
               article: {
-                data: { type: 'posts', id: post.id.to_s }
+                data: { type: 'posts', id: article.id.to_s }
               },
               user: {
                 data: { type: 'users', id: comments.first.user.id.to_s }
@@ -344,7 +375,7 @@ describe 'Resource document structure', type: :request do
         end
 
         it 'converts aliased relationship' do
-          expect(Comment.last.post).to eq(post)
+          expect(Comment.last.post).to eq(article)
         end
       end
 
@@ -369,17 +400,17 @@ describe 'Resource document structure', type: :request do
 
         describe 'update definition' do
           before do
-            API::V1::CommentsController.instance_eval do
-              define_method :permitted_create_params do
+            API::V1::CommentsController.class_eval do
+              def permitted_update_params
                 [:content, :user, article: [:title, user: [:name]], rating: [:value]]
               end
             end
           end
 
           after do
-            API::V1::CommentsController.instance_eval do
-              define_method :permitted_create_params do
-                [:body, :user, article: [:title, user: [:name]], rating: [:value]]
+            API::V1::CommentsController.class_eval do
+              def permitted_update_params
+                [:body, :user, post: [:title, user: [:name]], rating: [:value]]
               end
             end
           end
@@ -389,18 +420,18 @@ describe 'Resource document structure', type: :request do
           let(:data) do
             [
               {
-                type: 'posts', id: post.id.to_s
+                type: 'posts', id: my_post.id.to_s
               }
             ]
           end
 
-          let(:other_comment) { comments.where.not(id: comment.id).first }
-          let(:post) { other_comment.post }
+          let(:other_comment) { Comment.where.not(id: comment.id).first }
+          let(:my_post) { other_comment.post }
 
           before { comment.reload && other_comment.reload }
 
           it 'persists the aliased type resource relationship' do
-            expect(comment.post).to eq(post)
+            expect(comment.post).to eq(my_post)
           end
         end
       end
@@ -409,60 +440,120 @@ describe 'Resource document structure', type: :request do
     describe 'aliasing an attribute of an aliased relationship' do
       before do
         Comment.instance_eval do
-          define_method :caprese_field_aliases do
+          def caprese_field_aliases
             {
               article: :post
             }
           end
         end
         Post.instance_eval do
-          define_method :caprese_field_aliases do
+          def caprese_field_aliases
             {
               name: :title
+            }
+          end
+
+          def caprese_type
+            :article
+          end
+        end
+        API::V1::CommentSerializer.instance_eval do
+          belongs_to :article
+        end
+        API::V1::PostSerializer.instance_eval do
+          attributes :name
+        end
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {
+              articles: :posts
             }
           end
         end
       end
 
       after do
-        Comment.instance_eval { remove_method :caprese_field_aliases }
-        Post.instance_eval { remove_method :caprese_field_aliases }
+        Comment.instance_eval do
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        Post.instance_eval do
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        API::V1::CommentSerializer.instance_eval do
+          self._reflections = _reflections.except(:article)
+        end
+        API::V1::PostSerializer.instance_eval do
+          self._attributes_data = _attributes_data.except(:name)
+        end
+
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {}
+          end
+        end
       end
 
       describe 'get' do
         before { get "/api/v1/comments#{query_str}" }
-        let(:query_str) { '?fields[comments]=content' }
+        let(:query_str) { '?include=article' }
 
         it 'aliases attribute' do
-          expect(json['data'][0]['attributes']['content']).not_to be_nil
+          expect(json['included'][0]['attributes']['name']).not_to be_nil
         end
 
         context 'select' do
-
+          let(:query_str) { '?include=article&fields[articles]=name' }
 
           it 'selects the aliased field' do
-            expect(json['data'][0]['attributes']['content']).not_to be_nil
+            expect(json['included'][0]['attributes']['name']).not_to be_nil
           end
 
           it 'does not select other fields' do
-            expect(json['data'][0]['attributes']['created_at']).to be_nil
+            expect(json['included'][0]['attributes']['created_at']).to be_nil
           end
         end
       end
+
+      # TODO: Add specs for POST alias attribute of aliased relationship
+      # describe 'post'
     end
+
+    # TODO: Add specs for POST alias relationship of aliased relationship
 
     describe 'aliasing a type' do
       before do
         Comment.instance_eval do
-          define_method :caprese_type do
+          def caprese_type
             :review
+          end
+        end
+
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {
+              reviews: :comments
+            }
           end
         end
       end
 
       after do
         Comment.instance_eval do
-          remove_method :caprese_type
+          def caprese_type
+            :comment
+          end
+        end
+
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {}
+          end
         end
       end
 
@@ -500,7 +591,7 @@ describe 'Resource document structure', type: :request do
             },
             relationships: {
               article: {
-                data: { type: 'posts', id: post.id.to_s }
+                data: { type: 'posts', id: Post.last.id.to_s }
               },
               user: {
                 data: { type: 'users', id: comments.first.user.id.to_s }
@@ -525,7 +616,7 @@ describe 'Resource document structure', type: :request do
               },
               relationships: {
                 comments: {
-                  data: { type: 'reviews', id: comment.id.to_s }
+                  data: [{ type: 'reviews', id: comment.id.to_s }]
                 },
                 user: {
                   data: { type: 'users', id: comments.first.user.id.to_s }
@@ -535,32 +626,32 @@ describe 'Resource document structure', type: :request do
           end
 
           it 'persists the aliased typed relationship resource' do
-            expect(Post.last.comment).to eq(comment)
+            expect(Post.last.comments.first).to eq(comment)
           end
         end
       end
 
       describe 'relationship endpoints' do
-        let(:post) { comments.first.post }
+        let(:my_post) { comments.first.post }
 
         describe 'get data' do
-          before { get "/api/v1/posts/#{post.id}/comments" }
+          before { get "/api/v1/posts/#{my_post.id}/comments" }
 
           it 'aliases relationship resource type' do
-            expect(json['data'].select { |c| c['type'] == 'reviews' }.count).to eq(post.comments.size)
+            expect(json['data'].select { |c| c['type'] == 'reviews' }.count).to eq(my_post.comments.size)
           end
         end
 
         describe 'get definition' do
-          before { get "/api/v1/posts/#{post.id}/relationships/comments" }
+          before { get "/api/v1/posts/#{my_post.id}/relationships/comments" }
 
           it 'aliases relationship resource type' do
-            expect(json['data'].select { |c| c['type'] == 'reviews' }.count).to eq(post.comments.size)
+            expect(json['data'].select { |c| c['type'] == 'reviews' }.count).to eq(my_post.comments.size)
           end
         end
 
         describe 'update definition' do
-          before { patch "/api/v1/posts/#{post.id}/relationships/comments", { data: data } }
+          before { patch "/api/v1/posts/#{my_post.id}/relationships/comments", { data: data } }
 
           let(:data) do
             [
@@ -570,13 +661,13 @@ describe 'Resource document structure', type: :request do
             ]
           end
 
-          let(:other_post) { comments.where.not(id: post.id).first }
-          let(:comment) { other_post.comments.first }
+          let(:other_post) { Post.where.not(id: my_post.id).first }
+          let(:comment) { other_post.comments.create(body: 'done', user: Post.first.user) }
 
-          before { post.reload && other_post.reload }
+          before { my_post.reload && other_post.reload }
 
           it 'persists the aliased type resource relationship' do
-            expect(post.comments.first).to eq(comment)
+            expect(my_post.comments.first).to eq(comment)
           end
         end
       end

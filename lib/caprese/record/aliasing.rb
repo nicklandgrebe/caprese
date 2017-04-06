@@ -51,7 +51,7 @@ module Caprese
 
         # The type that is serialized and responded with for this class
         def caprese_type
-          self.class.name.underscore
+          self.name.underscore
         end
       end
     end
