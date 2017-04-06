@@ -1,3 +1,3 @@
 module Caprese
-  VERSION = '0.3.19.3'
+  VERSION = '0.3.20'
 end
