@@ -425,7 +425,8 @@ module Caprese
           allow_wildcard: true
         )
         serializer.associations(include_directive).each_with_object({}) do |association, hash|
-          hash[association.key] = Relationship.new(
+          aliased_key = serializer.object.class.caprese_alias_field(association.key)
+          hash[aliased_key] = Relationship.new(
             serializer,
             instance_options,
             association,
