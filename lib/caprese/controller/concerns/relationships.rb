@@ -207,24 +207,26 @@ module Caprese
             )
           end
 
+        relationship_name = queried_association.reflection.name
+
         successful =
           case queried_association.reflection.macro
           when :has_many
             if request.patch?
-              queried_record.send("#{params[:relationship]}=", relationship_resources)
+              queried_record.send("#{relationship_name}=", relationship_resources)
             elsif request.post?
-              queried_record.send(params[:relationship]).push relationship_resources
+              queried_record.send(relationship_name).push relationship_resources
             elsif request.delete?
-              queried_record.send(params[:relationship]).delete relationship_resources
+              queried_record.send(relationship_name).delete relationship_resources
             end
           when :has_one
             if request.patch?
-              queried_record.send("#{params[:relationship]}=", relationship_resources[0])
+              queried_record.send("#{relationship_name}=", relationship_resources[0])
               objects[0].save
             end
           when :belongs_to
             if request.patch?
-              queried_record.send("#{params[:relationship]}=", relationship_resources[0])
+              queried_record.send("#{relationship_name}=", relationship_resources[0])
               queried_record.save
             end
           end
