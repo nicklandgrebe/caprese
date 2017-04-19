@@ -117,3 +117,7 @@
 * Add `Caprese::Controller#resource_type_aliases` method that returns object mapping type aliases to actual types for the application
 * Add `Caprese::Record.caprese_field_aliases` method that returns object mapping field aliases to actual fields for the record
 * Add `Caprese::Record.caprese_type` method that returns singular symbol indicating the type to use when serializing the record. (`Caprese::Serializer.json_api_key` now uses this.)
+
+## 0.3.21
+
+* Change `::Record.caprese_style_errors` to false by default so non-Caprese errors render normally
