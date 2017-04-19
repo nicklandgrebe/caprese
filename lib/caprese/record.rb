@@ -12,7 +12,7 @@ module Caprese
     include Aliasing
 
     mattr_accessor :caprese_style_errors
-    @@caprese_style_errors = true
+    @@caprese_style_errors = false
 
     # @return [Errors] a cached instance of the model errors class
     def errors
