@@ -5,7 +5,9 @@ describe 'Managing relationships of resources', type: :request do
   subject(:resource) { create :post, :with_comments, comment_count: original_comment_count }
 
   context 'retrieving relationship definition' do
-    before { get "/api/v1/posts/#{resource.id}/relationships/#{relationship}" }
+    before { get "/api/v1/posts/#{resource.id}/relationships/#{relationship}#{query_str}" }
+
+    let(:query_str) { '' }
 
     context 'one-to-one' do
       subject(:relationship) { 'user' }
@@ -35,6 +37,15 @@ describe 'Managing relationships of resources', type: :request do
 
       it 'responds with appropriate message' do
         expect(json['errors'][0]['detail']).to eq("Could not find relationship with name: 'invalid'")
+      end
+    end
+
+    context 'include' do
+      let(:relationship) { 'user' }
+      let(:query_str) { '?include=posts' }
+
+      it 'includes specified relationships' do
+        expect(json['included'].map { |i| i['type'] }).to include('posts')
       end
     end
   end
@@ -170,7 +181,9 @@ describe 'Managing relationships of resources', type: :request do
 
     before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
 
-    before { get "/api/v1/#{resource.class.name.downcase.pluralize}/#{resource.id}/#{relationship}" }
+    before { get "/api/v1/#{resource.class.name.downcase.pluralize}/#{resource.id}/#{relationship}#{query_str}" }
+
+    let(:query_str) { '' }
 
     context 'one-to-one' do
       subject(:relationship) { 'user' }
@@ -221,6 +234,25 @@ describe 'Managing relationships of resources', type: :request do
 
       it 'responds with 404' do
         expect(response.status).to eq(404)
+      end
+    end
+
+    context 'fields' do
+      let(:relationship) { 'user' }
+      let(:query_str) { '?fields[users]=name' }
+
+      it 'only returns fields specified' do
+        expect(json['data']['attributes']['name']).not_to be_nil
+        expect(json['data']['attributes']['created_at']).to be_nil
+      end
+    end
+
+    context 'include' do
+      let(:relationship) { 'user' }
+      let(:query_str) { '?include=posts' }
+
+      it 'includes specified relationships' do
+        expect(json['included'].map { |i| i['type'] }).to include('posts')
       end
     end
   end

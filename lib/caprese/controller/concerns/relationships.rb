@@ -69,7 +69,12 @@ module Caprese
           )
       end
 
-      render json: target, links: links
+      render(
+        json: target,
+        fields: query_params[:fields],
+        include: query_params[:include],
+        links: links
+      )
     end
 
     # Returns relationship data for a resource
@@ -129,7 +134,12 @@ module Caprese
         target = relationship_scope(params[:relationship], target)
       end
 
-      render json: target, links: links, fields: {}
+      render(
+        json: target,
+        fields: {},
+        include: query_params[:include],
+        links: links
+      )
     end
 
     # Updates a relationship for a resource
