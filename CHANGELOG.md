@@ -121,3 +121,7 @@
 ## 0.3.21
 
 * Change `::Record.caprese_style_errors` to false by default so non-Caprese errors render normally
+
+## 0.3.22
+
+* Add query_params fields and include to relationship endpoints
