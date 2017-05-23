@@ -125,3 +125,7 @@
 ## 0.3.22
 
 * Add query_params fields and include to relationship endpoints
+
+## 0.3.23
+
+* Require AMS 0.10.5
