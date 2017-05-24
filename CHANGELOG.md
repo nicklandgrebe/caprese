@@ -129,3 +129,7 @@
 ## 0.3.23
 
 * Require AMS 0.10.5
+
+## 0.3.23.1
+
+* Actually require AMS 0.10.5 (lol)
