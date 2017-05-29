@@ -33,4 +33,8 @@ module Caprese
 
   # The maximum size of any page queried
   config.max_page_size ||= 100
+
+  # If true, Caprese will trim the isolated namespace module of the engine off the front of output
+  #   from methods contained in Versioning module
+  config.isolated_namespace ||= nil
 end

@@ -15,6 +15,8 @@ module Caprese
     def version_module(suffix = nil)
       name = (self.is_a?(Class) ? self : self.class).name.deconstantize
 
+      name = name.gsub("#{Caprese.config.isolated_namespace}::", '') if Caprese.config.isolated_namespace
+
       name + (suffix ? "::#{suffix}" : '')
     end
 
