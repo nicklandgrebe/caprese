@@ -133,3 +133,7 @@
 ## 0.3.23.1
 
 * Actually require AMS 0.10.5 (lol)
+
+## 0.3.24
+
+* Add `Caprese.config.isolated_namespace` to enable Caprese to work with isolate_namespace Engines
