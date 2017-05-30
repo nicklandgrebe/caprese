@@ -136,4 +136,8 @@
 
 ## 0.3.24
 
-* Add `Caprese.config.isolated_namespace` to enable Caprese to work with isolate_namespace Engines
+* Add `Caprese.config.isolated_namespace` to enable Caprese to work with isolate_namespace Engines by trimming the `isolated_namespace` off the front of the result of calls to `version_module`, `version_path`, `version_name`, etc.
+
+## 0.3.25
+
+* Add `namespaced_module` and `unnamespace` helper to Versioning that provides full module namespace when `config.isolate_namespace` is present (replaces the old functionality of `version_module` and `unversion`)
