@@ -58,11 +58,10 @@ module Caprese
       links = { self: request.original_url }
 
       if !target.respond_to?(:to_ary) &&
-        Rails.application.routes.url_helpers
-        .respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
+        url_helpers.respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
 
         links[:related] =
-          Rails.application.routes.url_helpers.send(
+          url_helpers.send(
             related_url,
             target.read_attribute(self.config.resource_primary_key),
             host: caprese_default_url_options_host
@@ -117,10 +116,10 @@ module Caprese
       links = { self: request.original_url }
 
       # Add related link for this relationship if it exists
-      if Rails.application.routes.url_helpers
+      if url_helpers
         .respond_to?(related_path = "relationship_data_#{version_name(unnamespace(params[:controller]).singularize)}_url")
 
-        links[:related] = Rails.application.routes.url_helpers.send(
+        links[:related] = url_helpers.send(
           related_path,
           params[:id],
           params[:relationship],

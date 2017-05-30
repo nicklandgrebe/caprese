@@ -1,5 +1,6 @@
 require 'action_controller'
 require 'active_support/configurable'
+require 'caprese/concerns/url_helpers'
 require 'caprese/concerns/versioning'
 require 'caprese/controller/concerns/aliasing'
 require 'caprese/controller/concerns/callbacks'
@@ -24,7 +25,9 @@ module Caprese
     include Relationships
     include Rendering
     include Typing
+    include UrlHelpers
     include Versioning
+    extend UrlHelpers
     extend Versioning
   end
 end
