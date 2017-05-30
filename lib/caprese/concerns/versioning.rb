@@ -15,9 +15,10 @@ module Caprese
     def namespaced_module(suffix = nil)
       mod = (self.is_a?(Class) ? self : self.class).name.deconstantize
 
-      mod = suffix.prepend("#{mod}::") unless suffix.nil? || (/^#{mod}\.*/).match(suffix)
+      name = suffix || mod
+      name = name.prepend("#{mod}::") unless suffix.nil? || (/^#{mod}::\.*/).match(suffix)
 
-      mod
+      name
     end
 
     # Get versioned module name of object (class)
