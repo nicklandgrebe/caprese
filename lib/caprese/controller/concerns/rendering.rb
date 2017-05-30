@@ -66,7 +66,7 @@ module Caprese
     # @return [Serializer] the serializer for the class
     def get_serializer_for(klass)
       begin
-        version_module("#{klass.name}Serializer").constantize
+        namespaced_module("#{klass.name}Serializer").constantize
       rescue NameError => e
         get_serializer_for(klass.superclass) if klass.superclass
       end
