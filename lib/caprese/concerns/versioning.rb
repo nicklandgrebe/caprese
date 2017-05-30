@@ -15,6 +15,8 @@ module Caprese
     def namespaced_module(suffix = nil)
       name = (self.is_a?(Class) ? self : self.class).name.deconstantize
 
+      name = suffix.prepend("#{name}::") unless (/^#{name}\.*/).match(suffix)
+
       name + (suffix ? "::#{suffix}" : '')
     end
 
