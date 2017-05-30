@@ -31,7 +31,7 @@ module Caprese
     #
     # @return [Class] the record class for the current controller
     def controller_record_class
-      record_class(unversion(params[:controller]))
+      record_class(unnamespace(params[:controller]))
     end
 
     # Checks if a given type mismatches the controller type

@@ -169,7 +169,7 @@ module Caprese
     # @return [Relation] the record scope of the queried controller
     def queried_record_scope
       unless @queried_record_scope
-        scope = record_scope(unversion(params[:controller]).to_sym)
+        scope = record_scope(unnamespace(params[:controller]).to_sym)
 
         if scope.any? && query_params[:filter].try(:any?)
           if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k).to_s }).present?

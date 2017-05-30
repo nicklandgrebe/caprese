@@ -28,7 +28,7 @@ module Caprese
     # @param [Hash] t the interpolation params to be passed into I18n.t
     def error(field: nil, code: :invalid, t: {})
       Error.new(
-        controller: unversion(params[:controller]),
+        controller: unnamespace(params[:controller]),
         action: params[:action],
         field: field,
         code: code,

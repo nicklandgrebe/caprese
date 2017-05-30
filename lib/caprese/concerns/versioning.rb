@@ -10,7 +10,7 @@ module Caprese
     #   namespaced_module('OrdersController') => 'API::V1::OrdersController'
     #
     # @param [String] suffix the string to append, hypothetically a module in
-    #  this version's module space
+    #  this namespace's module space
     # @return [String] the namespaced modulized name of the suffix passed in
     def namespaced_module(suffix = nil)
       mod = (self.is_a?(Class) ? self : self.class).name.deconstantize
@@ -19,6 +19,54 @@ module Caprese
       name = name.prepend("#{mod}::") unless suffix.nil? || (/^#{mod}::\.*/).match(suffix)
 
       name
+    end
+
+    # Get full namespaced path (url)
+    #
+    # @example
+    #   namespaced_path('orders') => 'api/v1/orders'
+    #
+    # @param [String] suffix the string to append, hypothetically an extension in
+    #   this namespace's path space
+    # @return [String] the full namespaced path name of the suffix passed in
+    def namespaced_path(suffix = nil)
+      namespaced_module.downcase.split('::').push(suffix).reject(&:nil?).join('/')
+    end
+
+    # Get full namespaced dot path (translations)
+    #
+    # @example
+    #   namespaced_dot_path('orders') => 'api/v1/orders'
+    #
+    # @param [String] suffix the string to append, hypothetically an extension in
+    #   this namespace's dot space
+    # @return [String] the full namespaced dot path of the suffix passed in
+    def namespaced_dot_path(suffix = nil)
+      namespaced_module.downcase.split('::').push(suffix).reject(&:nil?).join('.')
+    end
+
+    # Get full namespaced underscore name (routes)
+    #
+    # @example
+    #   namespaced_name('orders') => 'api_v1_orders'
+    #
+    # @param [String] suffix the string to append, hypothetically a name that
+    #  needs to be namespaced
+    # @return [String] the namespaced name of the suffix passed in
+    def namespaced_name(suffix = nil)
+      namespaced_module.downcase.split('::').push(suffix).reject(&:nil?).join('_')
+    end
+
+    # Strips string to raw unnamespaced format regardless of input format
+    #
+    # @param [String] str the string to unversion
+    # @return [String] the stripped, unnamespaced name of the string passed in
+    def unnamespace(str)
+      str
+      .remove(namespaced_module(''))
+      .remove(namespaced_path(''))
+      .remove(namespaced_name(''))
+      .remove(namespaced_dot_path(''))
     end
 
     # Get versioned module name of object (class)
@@ -64,6 +112,8 @@ module Caprese
     end
 
     # Get versioned underscore name (routes)
+    # @note The difference between namespaced and versioned module names is that if an isolated_namespace
+    #   is present, version_module will return a module name without the isolated namespace
     #
     # @example
     #   version_name('orders') => 'api_v1_orders'

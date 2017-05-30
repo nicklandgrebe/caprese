@@ -118,7 +118,7 @@ module Caprese
 
       # Add related link for this relationship if it exists
       if Rails.application.routes.url_helpers
-        .respond_to?(related_path = "relationship_data_#{version_name(unversion(params[:controller]).singularize)}_url")
+        .respond_to?(related_path = "relationship_data_#{version_name(unnamespace(params[:controller]).singularize)}_url")
 
         links[:related] = Rails.application.routes.url_helpers.send(
           related_path,

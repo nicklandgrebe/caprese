@@ -68,7 +68,7 @@ module Caprese
         def get_route_for(klass)
           output = nil
           while klass.superclass do
-            if Rails.application.routes.url_helpers.respond_to?(url = version_name("#{klass.name.underscore}_url"))
+            if Rails.application.routes.url_helpers.respond_to?(url = version_name("#{unnamespace(klass.name).underscore}_url"))
               output = url
               break
             end

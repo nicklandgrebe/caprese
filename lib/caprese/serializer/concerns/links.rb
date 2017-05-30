@@ -84,7 +84,7 @@ module Caprese
 
           Proc.new do |serializer|
             link :self do
-              url = "relationship_definition_#{serializer.version_name("#{object.class.name.underscore}_url")}"
+              url = "relationship_definition_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
               if Rails.application.routes.url_helpers.respond_to? url
                 Rails.application.routes.url_helpers.send(
                   url,
@@ -96,7 +96,7 @@ module Caprese
             end
 
             link :related do
-              url = "relationship_data_#{serializer.version_name("#{object.class.name.underscore}_url")}"
+              url = "relationship_data_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
               if Rails.application.routes.url_helpers.respond_to? url
                 Rails.application.routes.url_helpers.send(
                   url,
