@@ -13,11 +13,11 @@ module Caprese
     #  this version's module space
     # @return [String] the namespaced modulized name of the suffix passed in
     def namespaced_module(suffix = nil)
-      name = (self.is_a?(Class) ? self : self.class).name.deconstantize
+      mod = (self.is_a?(Class) ? self : self.class).name.deconstantize
 
-      name = suffix.prepend("#{name}::") unless (/^#{name}\.*/).match(suffix)
+      mod = suffix.prepend("#{mod}::") unless suffix.nil? || (/^#{mod}\.*/).match(suffix)
 
-      name + (suffix ? "::#{suffix}" : '')
+      mod
     end
 
     # Get versioned module name of object (class)
