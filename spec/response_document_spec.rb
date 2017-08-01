@@ -112,6 +112,34 @@ describe 'Resource document structure', type: :request do
       end
     end
 
+    context 'when specifically serializing relationships' do
+      let(:post) { create :post }
+      let!(:comments) { create_list :comment, 2, post: post, user: post.user }
+
+      before do
+        API::V1::PostsController.instance_eval do
+          define_method :relationship_serializer do |name|
+            case name
+              when :comments
+                API::V1::SpecificCommentSerializer
+            end
+          end
+        end
+      end
+
+      after do
+        API::V1::PostsController.instance_eval do
+          remove_method :relationship_serializer
+        end
+      end
+
+      before { get "/api/v1/posts/#{post.id}/comments" }
+
+      it 'uses specific serializer' do
+        expect(json['data'][0]['attributes']['custom_attribute']).not_to be_nil
+      end
+    end
+
     context 'when optimizing relationships' do
       before { Caprese.config.optimize_relationships = true }
       after { Caprese.config.optimize_relationships = false }

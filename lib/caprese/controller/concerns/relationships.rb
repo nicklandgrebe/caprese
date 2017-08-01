@@ -24,6 +24,25 @@ module Caprese
       scope
     end
 
+    # Allows selection of serializer for any relationship serialized by get_relationship_data
+    #
+    # @note Returns nil by default because Caprese::Controller#render will determine the serializer if nil
+    #
+    # @example
+    #   def relationship_serializer(name)
+    #     case name
+    #     when :answer
+    #       AnswerSerializer
+    #     else
+    #       super
+    #     end
+    #   end
+    # @param [String] name the name of the relationship
+    # @return [Serializer,Nil] the serializer for the relationship or nil if none specified
+    def relationship_serializer(name)
+      nil
+    end
+
     # Retrieves the data for a relationship, not just the definition/resource identifier
     #   @note Resource Identifier = { id: '...', type: '....' }
     #   @note Resource = Resource Identifier + { attributes: { ... } }
@@ -44,7 +63,7 @@ module Caprese
     def get_relationship_data
       target =
         if queried_association.reflection.collection?
-          scope = relationship_scope(params[:relationship], queried_association.reader)
+          scope = relationship_scope(params[:relationship].to_sym, queried_association.reader)
 
           if params[:relation_primary_key_value].present?
             get_record!(scope, self.class.config.resource_primary_key, params[:relation_primary_key_value])
@@ -57,18 +76,23 @@ module Caprese
 
       links = { self: request.original_url }
 
-      if !target.respond_to?(:to_ary) &&
-        url_helpers.respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
+      if target.respond_to?(:to_ary)
+        serializer_type = :each_serializer
+      else
+        serializer_type = :serializer
 
-        links[:related] =
-          url_helpers.send(
-            related_url,
-            target.read_attribute(self.config.resource_primary_key),
-            host: caprese_default_url_options_host
-          )
+        if url_helpers.respond_to?(related_url = version_name("#{params[:relationship].singularize}_url"))
+          links[:related] =
+            url_helpers.send(
+              related_url,
+              target.read_attribute(self.config.resource_primary_key),
+              host: caprese_default_url_options_host
+            )
+        end
       end
 
       render(
+        serializer_type => relationship_serializer(params[:relationship].to_sym),
         json: target,
         fields: query_params[:fields],
         include: query_params[:include],
