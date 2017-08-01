@@ -11,12 +11,14 @@ module Caprese
         # @note Overrides the AMS default since the default does not do namespaced lookup
         #
         # @param [ActiveRecord::Base] record the record to get a serializer for
-        # @param [Hash] options options for `super` to use when getting the serializer
+        # @param [Hash] options options to use when getting the serializer
         # @return [Serializer,Nil] the serializer for the given record
         def serializer_for(record, options = {})
           return ActiveModel::Serializer::CollectionSerializer if record.respond_to?(:to_ary)
 
-          get_serializer_for(record.class) if valid_for_serialization(record)
+          if valid_for_serialization(record)
+            options.fetch(:serializer) { get_serializer_for(record.class) }
+          end
         end
 
         # Indicates whether or not the record specified can be serialized by Caprese
