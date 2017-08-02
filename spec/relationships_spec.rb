@@ -60,7 +60,7 @@ describe 'Managing relationships of resources', type: :request do
       )
     end
 
-    before { resource.reload() }
+    before { resource.reload }
 
     context 'one-to-one' do
       subject(:verb) { 'patch' }
@@ -80,6 +80,7 @@ describe 'Managing relationships of resources', type: :request do
       end
 
       context 'when clearing relationship' do
+        subject(:resource) { create :comment }
         subject(:relationship) { 'user' }
         subject(:data) { nil }
 
@@ -93,8 +94,7 @@ describe 'Managing relationships of resources', type: :request do
       end
 
       context 'when relationship cannot be changed' do
-        subject(:resource) { create :comment, :with_rating }
-        subject(:relationship) { 'rating' }
+        subject(:relationship) { 'user' }
         subject(:data) { nil }
 
         it 'responds with 403' do

@@ -5,6 +5,31 @@ module Caprese
   module Aliasing
     extend ActiveSupport::Concern
 
+    # Records all of the field aliases engaged by the API request (called in `assign_record_attributes` using comparison)
+    # so that when the response is returned, the appropriate alias is used in reference to fields
+    #
+    # Success: @todo
+    # Errors: @see ErrorSerializer
+    #
+    # @example
+    # {
+    #   aliased_attribute: true, # used aliased attribute name instead of unaliased one
+    #
+    #   aliased_relationship: { # used aliased relationship name
+    #     aliased_attribute: true # and aliased attribute names
+    #     aliased_attribute_2: true
+    #   },
+    #
+    #   aliased_relationship: {}, # used aliased relationship name but no aliased attribute names
+    #
+    #   unaliased_relationship: { # used unaliased relationship name
+    #     aliased_attribute: true # and aliased attribute name for that relationship
+    #   },
+    # }
+    def engaged_field_aliases
+      @__engaged_field_aliases ||= {}
+    end
+
     # Specifies specific resource models that have types that are aliased.
     # @note The `caprese_type` class variable of the model should also be set to the new type
     # @example

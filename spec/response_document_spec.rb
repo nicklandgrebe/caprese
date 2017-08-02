@@ -307,22 +307,6 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before do
-          API::V1::CommentsController.class_eval do
-            def permitted_create_params
-              [:content, :user, post: [:title, user: [:name]], rating: [:value]]
-            end
-          end
-        end
-
-        after do
-          API::V1::CommentsController.class_eval do
-            def permitted_create_params
-              [:body, :user, post: [:title, user: [:name]], rating: [:value]]
-            end
-          end
-        end
-
         before { post '/api/v1/comments', { data: data } }
         let(:content) { 'mah awesome body' }
 
@@ -405,22 +389,6 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before do
-          API::V1::CommentsController.class_eval do
-            def permitted_create_params
-              [:body, :user, article: [:title, user: [:name]], rating: [:value]]
-            end
-          end
-        end
-
-        after do
-          API::V1::CommentsController.class_eval do
-            def permitted_create_params
-              [:body, :user, post: [:title, user: [:name]], rating: [:value]]
-            end
-          end
-        end
-
         before { post '/api/v1/comments', { data: data } }
         let(:article) { create :post }
 
@@ -466,22 +434,6 @@ describe 'Resource document structure', type: :request do
         end
 
         describe 'update definition' do
-          before do
-            API::V1::CommentsController.class_eval do
-              def permitted_update_params
-                [:content, :user, article: [:title, user: [:name]], rating: [:value]]
-              end
-            end
-          end
-
-          after do
-            API::V1::CommentsController.class_eval do
-              def permitted_update_params
-                [:body, :user, post: [:title, user: [:name]], rating: [:value]]
-              end
-            end
-          end
-
           before { patch "/api/v1/comments/#{comment.id}/relationships/article", { data: data } }
 
           let(:data) do
@@ -550,6 +502,10 @@ describe 'Resource document structure', type: :request do
           def caprese_field_aliases
             {}
           end
+
+          def caprese_type
+            :post
+          end
         end
 
         API::V1::CommentSerializer.instance_eval do
@@ -587,11 +543,210 @@ describe 'Resource document structure', type: :request do
         end
       end
 
-      # TODO: Add specs for POST alias attribute of aliased relationship
-      # describe 'post'
+      describe 'post' do
+        before { post '/api/v1/comments', { data: data } }
+        
+        let(:name) { 'A valid name' }
+
+        let(:data) do
+          {
+            type: 'comments',
+            attributes: {
+              body: 'A body'
+            },
+            relationships: {
+              article: {
+                data: {
+                  type: 'articles',
+                  attributes: {
+                    name: name
+                  },
+                  relationships: {
+                    user: {
+                      data: {
+                        type: 'users',
+                        id: create(:user).id.to_s
+                      }
+                    }
+                  }
+                }
+              },
+              user: {
+                data: {
+                  type: 'users',
+                  id: create(:user).id.to_s
+                }
+              }
+            }
+          }
+        end
+
+        it 'aliases attribute' do
+          expect(Comment.last.post.title).to eq(name)
+        end
+        
+        context 'when attribute invalid' do
+          let(:name) { '' }
+
+          it 'responds with error source pointer to aliased relationship aliased attribute' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/article/data/attributes/name')
+          end
+        end
+      end
     end
 
-    # TODO: Add specs for POST alias relationship of aliased relationship
+    describe 'aliasing a relationship of an aliased relationship' do
+      before do
+        Comment.instance_eval do
+          def caprese_field_aliases
+            {
+              article: :post
+            }
+          end
+        end
+        Post.instance_eval do
+          def caprese_field_aliases
+            {
+              submitter: :user
+            }
+          end
+
+          def caprese_type
+            :article
+          end
+        end
+
+        class API::V1::SubmitterSerializer < API::V1::UserSerializer
+          def json_key
+            :submitters
+          end
+        end
+        API::V1::CommentSerializer.instance_eval do
+          belongs_to :article
+        end
+        API::V1::PostSerializer.instance_eval do
+          belongs_to :submitter, serializer: API::V1::SubmitterSerializer
+        end
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {
+              articles: :posts,
+              submitters: :users
+            }
+          end
+
+          def record_scope(type)
+            case type
+              when :submitters
+                User.all
+              else
+                super
+            end
+          end
+        end
+      end
+
+      after do
+        Comment.instance_eval do
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        Post.instance_eval do
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        API::V1::CommentSerializer.instance_eval do
+          self._reflections = _reflections.except(:article)
+        end
+        API::V1::PostSerializer.instance_eval do
+          self._reflections = _reflections.except(:submitter)
+        end
+
+        API::V1::ApplicationController.class_eval do
+          def resource_type_aliases
+            {}
+          end
+        end
+      end
+
+      describe 'get' do
+        before { get "/api/v1/comments#{query_str}" }
+        let(:query_str) { '?include=article.submitter' }
+
+        it 'aliases relationship' do
+          expect(json['included'][0]['relationships']['submitter']).not_to be_nil
+        end
+
+        context 'select' do
+          let(:query_str) { '?include=article.submitter&fields[submitters]=name' }
+
+          let(:include) { json['included'].detect { |i| i['type'] == 'submitters' } }
+
+          it 'selects the aliased field' do
+            expect(include['attributes']['name']).not_to be_nil
+          end
+
+          it 'does not select other fields' do
+            expect(include['attributes']['created_at']).to be_nil
+          end
+        end
+      end
+
+      describe 'post' do
+        before { post '/api/v1/comments', { data: data } }
+
+        let(:submitter_id) { create(:user).id.to_s }
+
+        let(:data) do
+          {
+            type: 'comments',
+            attributes: {
+              body: 'A body'
+            },
+            relationships: {
+              article: {
+                data: {
+                  type: 'articles',
+                  attributes: {
+                    title: 'name'
+                  },
+                  relationships: {
+                    submitter: {
+                      data: {
+                        type: 'submitters',
+                        id: submitter_id
+                      }
+                    }
+                  }
+                }
+              },
+              user: {
+                data: {
+                  type: 'users',
+                  id: create(:user).id.to_s
+                }
+              }
+            }
+          }
+        end
+
+        it 'aliases relationship' do
+          expect(Comment.last.post.user.id.to_s).to eq(submitter_id)
+        end
+
+        context 'when relationship invalid' do
+          let(:submitter_id) { 'a' }
+
+          it 'responds with error source pointer to aliased relationship aliased relationship' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/article/data/relationships/submitter/data')
+          end
+        end
+      end
+    end
 
     describe 'aliasing a type' do
       before do
@@ -657,7 +812,7 @@ describe 'Resource document structure', type: :request do
               body: 'abcdef123456'
             },
             relationships: {
-              article: {
+              post: {
                 data: { type: 'posts', id: Post.last.id.to_s }
               },
               user: {

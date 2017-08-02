@@ -4,5 +4,5 @@ class Post < ApplicationRecord
   has_many :attachments
   has_many :comments
 
-  validates_presence_of :title
+  validates_presence_of :title, :user
 end

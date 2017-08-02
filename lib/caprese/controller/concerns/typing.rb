@@ -50,7 +50,7 @@ module Caprese
         invalid_typed_record = controller_record_class.new
         invalid_typed_record.errors.add(:type)
 
-        fail RecordInvalidError.new(invalid_typed_record)
+        fail RecordInvalidError.new(invalid_typed_record, engaged_field_aliases)
       end
     end
   end

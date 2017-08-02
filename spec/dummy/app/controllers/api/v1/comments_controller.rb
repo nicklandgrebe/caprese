@@ -4,11 +4,21 @@ module API
       private
 
       def permitted_create_params
-        [:body, :user, post: [:title, user: [:name]], rating: [:value]]
+        [
+          :body, :content, :user,
+          post: [:title, user: [:name]],
+          article: [:name, :title, user: [:name], submitter: [:name]],
+          rating: [:value]
+        ]
       end
 
       def permitted_update_params
-        [:body, :user, :post]
+        [
+          :body, :content, :user,
+          post: [:title, user: [:name]],
+          article: [:title, user: [:name]],
+          rating: [:value]
+        ]
       end
     end
   end

@@ -5,11 +5,12 @@ module Caprese
   #
   # @param [ActiveRecord::Base] record the record that is invalid
   class RecordInvalidError < Error
-    attr_reader :record
+    attr_reader :record, :aliases
 
-    def initialize(record)
+    def initialize(record, engaged_field_aliases)
       super()
       @record = record
+      @aliases = engaged_field_aliases
       @header = { status: :unprocessable_entity }
     end
 

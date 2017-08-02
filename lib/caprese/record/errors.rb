@@ -24,7 +24,7 @@ module Caprese
 
         e = Error.new(
           model: @base.class.name.underscore.downcase,
-          field: attribute == :base ? nil : @base.class.caprese_alias_field(attribute),
+          field: attribute == :base ? nil : attribute,
           code: code,
           t: options[:t]
         )
@@ -56,7 +56,7 @@ module Caprese
         (get(attribute) || []).map { |e| e.full_message }
       end
 
-      # @note Overriden because traditionally to_a is an alias for `full_messages`, because in Rails standard there is
+      # @note Overridden because traditionally to_a is an alias for `full_messages`, because in Rails standard there is
       #   no difference between an error and a full message, an error is that full message. With our API, an error is a
       #   model that can render full messages, but it is still a distinct model. `to_a` thus has a different meaning here
       #   than in Rails standard.

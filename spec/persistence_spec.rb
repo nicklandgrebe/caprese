@@ -63,9 +63,15 @@ describe 'Requests that persist data', type: :request do
       subject(:relationships) do
         {
           comments: { data: [
-            { type: 'comments', id: comments[0].id },
-            { type: 'comments', id: comments[1].id }
+            { type: 'comments', id: comments[0].id.to_s },
+            { type: 'comments', id: comments[1].id.to_s }
           ]},
+          user: {
+            data: {
+              type: 'users',
+              id: create(:user).id.to_s
+            }
+          }
         }
       end
 

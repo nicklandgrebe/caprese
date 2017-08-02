@@ -19,7 +19,7 @@ module Caprese
       end
 
       rescue_from ActiveRecord::RecordInvalid do |e|
-        rescue_with_handler RecordInvalidError.new(e.record)
+        rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
       end
 
       rescue_from ActiveRecord::RecordNotDestroyed do |e|
@@ -46,7 +46,7 @@ module Caprese
       execute_before_create_callbacks(record)
       execute_before_save_callbacks(record)
 
-      fail RecordInvalidError.new(record) if record.errors.any?
+      fail RecordInvalidError.new(record, engaged_field_aliases) if record.errors.any?
 
       record.save!
 
@@ -75,7 +75,7 @@ module Caprese
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
 
-      fail RecordInvalidError.new(queried_record) if queried_record.errors.any?
+      fail RecordInvalidError.new(queried_record, engaged_field_aliases) if queried_record.errors.any?
 
       queried_record.save!
 
@@ -219,16 +219,33 @@ module Caprese
     # @param [ActiveRecord::Base] record the record to build attribute into
     # @param [Array] permitted_params the permitted params for the action
     # @param [Parameters] data the data sent to the server to construct and assign to the record
-    def assign_record_attributes(record, permitted_params, data)
-      attributes = data[:attributes].try(:permit, *permitted_params).try(:inject, {}) do |out, (attr, val)|
-        out[actual_field(attr, record.class)] = val
+    # @option [String] parent_relationship_name the parent relationship assigning these attributes to the record, used to determine
+    #   engaged aliases @see concerns/aliasing
+    def assign_record_attributes(record, permitted_params, data, parent_relationship_name: nil)
+      # TODO: Make safe by enforcing that only a single alias/unalias can be engaged at once
+      engaged_field_aliases_object = parent_relationship_name ? (engaged_field_aliases[parent_relationship_name] ||= {}) : engaged_field_aliases
+
+      attributes = data[:attributes].try(:permit, *permitted_params).try(:inject, {}) do |out, (attribute_name, val)|
+        attribute_name = attribute_name.to_sym
+        actual_attribute_name = actual_field(attribute_name, record.class)
+
+        if attribute_name != actual_attribute_name
+          engaged_field_aliases_object[attribute_name] = true
+        end
+
+        out[actual_attribute_name] = val
         out
       end || {}
 
       data[:relationships]
       .try(:slice, *flattened_keys_for(permitted_params))
       .try(:each) do |relationship_name, relationship_data|
+        relationship_name = relationship_name.to_sym
         actual_relationship_name = actual_field(relationship_name, record.class)
+
+        if relationship_name != actual_relationship_name
+          engaged_field_aliases_object[relationship_name] = {}
+        end
 
         # TODO: Add checkme for relationship_name to ensure that format is correct (not Array when actually Record, vice versa)
         #   No relationship exists as well
@@ -261,7 +278,7 @@ module Caprese
           ref = record_for_relationship(owner, relationship_name, relationship_data_item)
 
           if ref && contains_constructable_data?(relationship_data_item)
-            assign_record_attributes(ref, permitted_params, relationship_data_item)
+            assign_record_attributes(ref, permitted_params, relationship_data_item, parent_relationship_name: relationship_name)
           end
 
           ref
@@ -270,7 +287,7 @@ module Caprese
         ref = record_for_relationship(owner, relationship_name, relationship_data[:data])
 
         if ref && contains_constructable_data?(relationship_data[:data])
-          assign_record_attributes(ref, permitted_params, relationship_data[:data])
+          assign_record_attributes(ref, permitted_params, relationship_data[:data], parent_relationship_name: relationship_name)
         end
 
         ref
@@ -317,19 +334,6 @@ module Caprese
         owner.errors.add("#{relationship_name}.type")
         nil
       end
-    end
-
-    # Assigns permitted attributes for a record in a relationship, for a given action
-    # like create/update
-    #
-    # @param [ActiveRecord::Base] record the relationship record
-    # @param [String] relationship_name the name of the relationship
-    # @param [Symbol] action the action that is calling this method (create, update)
-    # @param [Hash] resource_identifier the resource identifier
-    def assign_relationship_record_attributes(record, relationship_name, action, attributes)
-      record.assign_attributes(
-        attributes.permit(nested_permitted_params_for(action, relationship_name))
-      )
     end
 
     # Indicates whether or not :attributes or :relationships keys are in a resource identifier,
