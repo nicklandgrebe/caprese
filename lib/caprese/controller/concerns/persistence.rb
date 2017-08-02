@@ -266,7 +266,7 @@ module Caprese
 
           ref
         end
-      else
+      elsif relationship_data[:data].present?
         ref = record_for_relationship(owner, relationship_name, relationship_data[:data])
 
         if ref && contains_constructable_data?(relationship_data[:data])
@@ -274,6 +274,11 @@ module Caprese
         end
 
         ref
+      else
+        raise Error.new(
+          field: "/data/relationships/#{relationship_name}/data",
+          code: :blank
+        )
       end
     end
 
