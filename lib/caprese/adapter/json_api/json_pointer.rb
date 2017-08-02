@@ -34,15 +34,11 @@ module Caprese
             values = value.to_s.split('.')
             last_index = values.count - 1
 
+            klass_iteratee = record.class
             values.each_with_index.inject('') do |pointer, (v, i)|
               pointer +
-                if record.class.reflections.key?(v)
-                  record =
-                    if record.class.reflections[v].collection?
-                      record.send(v).first
-                    else
-                      record.send(v)
-                    end
+                if ref = (klass_iteratee.reflect_on_association(v) || klass_iteratee.reflect_on_association(klass_iteratee.caprese_unalias_field(v)))
+                  klass_iteratee = ref.klass
 
                   if i == last_index
                     format(POINTERS[:relationship_base], v)
