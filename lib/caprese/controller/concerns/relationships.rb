@@ -255,7 +255,7 @@ module Caprese
           when :has_one
             if request.patch?
               queried_record.send("#{relationship_name}=", relationship_resources[0])
-              objects[0].save
+              relationship_resources[0].save if relationship_resources[0].present?
             end
           when :belongs_to
             if request.patch?
