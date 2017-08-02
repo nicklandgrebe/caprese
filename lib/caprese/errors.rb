@@ -7,7 +7,7 @@ module Caprese
   class RecordInvalidError < Error
     attr_reader :record, :aliases
 
-    def initialize(record, engaged_field_aliases)
+    def initialize(record, engaged_field_aliases = {})
       super()
       @record = record
       @aliases = engaged_field_aliases
