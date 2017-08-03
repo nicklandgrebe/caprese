@@ -141,3 +141,15 @@
 ## 0.3.25
 
 * Add `namespaced_module` and `unnamespace` helper to Versioning that provides full module namespace when `config.isolate_namespace` is present (replaces the old functionality of `version_module` and `unversion`)
+
+## 0.3.26
+
+* Record the field aliases that are used in the request so responses will use the same aliases
+* Allow options like `serializer` to be passed into `Serializer` association definitions
+* Allow specification of `relationship_serializer(name)` for serializing `get_relationship_data`, similar to `relationship_scope`
+* Fix bug that crashes when `[relationship]/data` is missing
+* Fix bug in `#update_relationship_definition`
+
+## 0.3.27
+
+* Fix bug in JSON API adapter that inappropriately aliases relationships
