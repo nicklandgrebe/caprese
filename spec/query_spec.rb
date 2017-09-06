@@ -162,7 +162,7 @@ describe 'Querying resources', type: :request do
 
     context 'when specifying nested fields' do
       it 'returns only the fields specified' do
-        get '/api/v1/comments?include=post&fields[post]=created_at'
+        get '/api/v1/comments?include=post&fields[posts]=created_at'
         expect(json['included'][0]['attributes']['created_at']).to_not be_nil
         expect(json['included'][0]['attributes']['updated_at']).to be_nil
       end

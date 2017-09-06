@@ -5,6 +5,6 @@ class User < ApplicationRecord
   validates_presence_of :name
 
   before_destroy do
-    false
+    throw :abort
   end
 end

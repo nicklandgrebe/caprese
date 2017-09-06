@@ -11,7 +11,7 @@ describe 'Requests that persist data', type: :request do
 
   describe '#create' do
     before do
-      post "/api/v1/#{type}/", { data: data }
+      post "/api/v1/#{type}/", params: { data: data }
     end
 
     subject(:type) { 'comments' }
@@ -244,7 +244,7 @@ describe 'Requests that persist data', type: :request do
   end
 
   describe '#update' do
-    before { put "/api/v1/#{type}/#{comment.id}", { data: data } }
+    before { put "/api/v1/#{type}/#{comment.id}", params: { data: data } }
 
     subject(:type) { 'comments' }
     subject(:comment) { create(:comment, user: user, post: resource) }

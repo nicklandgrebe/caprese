@@ -56,7 +56,7 @@ describe 'Managing relationships of resources', type: :request do
       send(
         verb,
         "/api/v1/#{resource.class.name.downcase.pluralize}/#{resource.id}/relationships/#{relationship}",
-        { data: data }
+        params: { data: data }
       )
     end
 
@@ -177,8 +177,6 @@ describe 'Managing relationships of resources', type: :request do
   end
 
   context 'retrieving relationship data' do
-    include Rails.application.routes.url_helpers
-
     before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
 
     before { get "/api/v1/#{resource.class.name.downcase.pluralize}/#{resource.id}/#{relationship}#{query_str}" }
@@ -198,7 +196,7 @@ describe 'Managing relationships of resources', type: :request do
       end
 
       it 'includes related link' do
-        expect(json['links']['related']).to eq(api_v1_user_url(resource.user))
+        expect(json['links']['related']).to eq(Rails.application.routes.url_helpers.api_v1_user_url(resource.user))
       end
     end
 
@@ -224,7 +222,7 @@ describe 'Managing relationships of resources', type: :request do
         end
 
         it 'includes related link' do
-          expect(json['links']['related']).to eq(api_v1_comment_url(resource.comments.first))
+          expect(json['links']['related']).to eq(Rails.application.routes.url_helpers.api_v1_comment_url(resource.comments.first))
         end
       end
     end

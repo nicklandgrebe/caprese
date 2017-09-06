@@ -31,8 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'database_cleaner'
   spec.add_development_dependency 'pry-byebug'
   spec.add_development_dependency 'rake', '~> 10.0'
-  spec.add_development_dependency 'responders', '~> 2.0'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'rspec-rails'
+  spec.add_development_dependency 'rspec', '~> 3.6.0'
+  spec.add_development_dependency 'rspec-rails', '~> 3.6.0'
   spec.add_development_dependency 'sqlite3'
 end
