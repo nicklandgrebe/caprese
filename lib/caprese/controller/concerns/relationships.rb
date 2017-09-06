@@ -94,7 +94,7 @@ module Caprese
       render(
         serializer_type => relationship_serializer(params[:relationship].to_sym),
         json: target,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include],
         links: links
       )

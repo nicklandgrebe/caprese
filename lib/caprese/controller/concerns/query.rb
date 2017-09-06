@@ -15,7 +15,7 @@ module Caprese
     def index
       render(
         json: queried_collection,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -24,7 +24,7 @@ module Caprese
     def show
       render(
         json: queried_record,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -171,7 +171,7 @@ module Caprese
       unless @queried_record_scope
         scope = record_scope(unnamespace(params[:controller]).to_sym)
 
-        if scope.any? && query_params[:filter].try(:any?)
+        if scope.any? && query_params[:filter] && !query_params[:filter].empty?
           if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k).to_s }).present?
             valid_filters.each do |k, v|
               scope = scope.where(actual_field(k) => v)

@@ -58,7 +58,7 @@ module Caprese
       render(
         json: record,
         status: :created,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -84,7 +84,7 @@ module Caprese
 
       render(
         json: queried_record,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -225,7 +225,7 @@ module Caprese
       # TODO: Make safe by enforcing that only a single alias/unalias can be engaged at once
       engaged_field_aliases_object = parent_relationship_name ? (engaged_field_aliases[parent_relationship_name] ||= {}) : engaged_field_aliases
 
-      attributes = data[:attributes].try(:permit, *permitted_params).try(:inject, {}) do |out, (attribute_name, val)|
+      attributes = data[:attributes].try(:permit, *permitted_params).try(:to_h).try(:inject, {}) do |out, (attribute_name, val)|
         attribute_name = attribute_name.to_sym
         actual_attribute_name = actual_field(attribute_name, record.class)
 
