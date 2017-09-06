@@ -353,7 +353,7 @@ module Caprese
     # This methods persists the collection relation(s) pushed onto the record's association target(s)
     def persist_collection_relationships(record)
       record.class.reflect_on_all_associations
-      .select { |ref| ref.collection? && !ref.through_reflection && record.association(ref.name).any? }
+      .select { |ref| ref.collection? && !ref.through_reflection && record.association(ref.name).target.any? }
       .map do |ref|
         [
           ref.has_inverse? ? ref.inverse_of.name : ref.options[:as],
