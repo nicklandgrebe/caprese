@@ -10,3 +10,4 @@
 /spec/dummy/db/*.sqlite3
 /spec/dummy/log/*
 /spec/dummy/tmp/*
+/gemfiles/*.lock
