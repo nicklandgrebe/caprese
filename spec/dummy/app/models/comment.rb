@@ -7,4 +7,13 @@ class Comment < ApplicationRecord
   validates_presence_of :body
 
   validates_associated :rating
+
+  before_save :body_ok
+
+  def body_ok
+    if body == 'trigger_callback'
+      errors.add(:body)
+      false
+    end
+  end
 end

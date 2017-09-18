@@ -18,7 +18,7 @@ module Caprese
         )
       end
 
-      rescue_from ActiveRecord::RecordInvalid do |e|
+      rescue_from ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved do |e|
         rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
       end
 

@@ -297,6 +297,18 @@ describe 'Requests that persist data', type: :request do
         end
       end
 
+      context 'callback' do
+        subject(:attributes) do
+          {
+            body: 'trigger_callback'
+          }
+        end
+
+        it 'fails to create the record with errors' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/body')
+        end
+      end
+
       context 'relationships' do
         subject(:relationships) do
           {
