@@ -19,7 +19,11 @@ module Caprese
       end
 
       rescue_from ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved do |e|
-        rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
+        if e.record
+          rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
+        else
+          rescue_with_handler ActionForbiddenError.new
+        end
       end
 
       rescue_from ActiveRecord::RecordNotDestroyed do |e|
