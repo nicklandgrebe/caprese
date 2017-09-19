@@ -295,7 +295,7 @@ module Caprese
         end
 
         ref
-      else
+      elsif !relationship_data.has_key?(:data)
         raise Error.new(
           field: "/data/relationships/#{relationship_name}/data",
           code: :blank
