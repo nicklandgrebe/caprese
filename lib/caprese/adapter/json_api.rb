@@ -244,7 +244,7 @@ module Caprese
 
       def process_relationships(serializer, include_directive)
         serializer.associations(include_directive).each do |association|
-          process_relationship(association.serializer, include_directive[association.key])
+          process_relationship(association.lazy_association.serializer, include_directive[association.key])
         end
       end
 

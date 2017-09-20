@@ -17,7 +17,7 @@ module Caprese
           hash = {}
 
           # Only render a relationship's data if it was included, if Caprese.config.optimize_relationships
-          if association.options[:include_data] &&
+          if association.include_data? &&
             (!Caprese.config.optimize_relationships || included_associations[association.name])
             hash[:data] = data_for(association)
           end
@@ -37,14 +37,45 @@ module Caprese
 
         private
 
+        # TODO(BF): Avoid db hit on belong_to_ releationship by using foreign_key on self
         def data_for(association)
-          serializer = association.serializer
-          if serializer.respond_to?(:each)
-            serializer.map { |s| ResourceIdentifier.new(s, serializable_resource_options).as_json }
-          elsif (virtual_value = association.options[:virtual_value])
+          if association.collection?
+            data_for_many(association)
+          else
+            data_for_one(association)
+          end
+        end
+
+        def data_for_one(association)
+          if association.belongs_to? &&
+            parent_serializer.object.respond_to?(association.reflection.foreign_key)
+            id = parent_serializer.read_attribute_for_serialization(association.reflection.foreign_key)
+            type = association.reflection.type.to_s
+            ResourceIdentifier.for_type_with_id(type, id, serializable_resource_options)
+          else
+            # TODO(BF): Process relationship without evaluating lazy_association
+            serializer = association.lazy_association.serializer
+            if (virtual_value = association.virtual_value)
+              virtual_value
+            elsif serializer && association.object
+              ResourceIdentifier.new(serializer, serializable_resource_options).as_json
+            else
+              nil
+            end
+          end
+        end
+
+        def data_for_many(association)
+          # TODO(BF): Process relationship without evaluating lazy_association
+          collection_serializer = association.lazy_association.serializer
+          if collection_serializer.respond_to?(:each)
+            collection_serializer.map do |serializer|
+              ResourceIdentifier.new(serializer, serializable_resource_options).as_json
+            end
+          elsif (virtual_value = association.virtual_value)
             virtual_value
-          elsif serializer && serializer.object
-            ResourceIdentifier.new(serializer, serializable_resource_options).as_json
+          else
+            []
           end
         end
 
