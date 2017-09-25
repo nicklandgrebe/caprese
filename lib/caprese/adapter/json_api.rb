@@ -290,8 +290,14 @@ module Caprese
           resource_object
         end
 
-        requested_associations = fieldset.fields_for(resource_object[:type]) || '*'
-        relationships = relationships_for(serializer, requested_associations, included_associations)
+        requested_associations = fieldset.fields_for(resource_object[:type])
+        requested_associations ||= included_associations.to_string if Caprese.config.optimize_relationships
+        requested_associations ||= '*'
+        requested_associations = JSONAPI::IncludeDirective.new(
+          requested_associations,
+          allow_wildcard: true
+        )
+        relationships = relationships_for(serializer, requested_associations)
         resource_object[:relationships] = relationships if relationships.any?
 
         links = links_for(serializer)
@@ -419,17 +425,12 @@ module Caprese
       #     id: 'required-id',
       #     meta: meta
       #   }.reject! {|_,v| v.nil? }
-      def relationships_for(serializer, requested_associations, included_associations)
-        include_directive = JSONAPI::IncludeDirective.new(
-          requested_associations,
-          allow_wildcard: true
-        )
+      def relationships_for(serializer, include_directive)
         serializer.associations(include_directive).each_with_object({}) do |association, hash|
           hash[association.key] = Relationship.new(
             serializer,
             instance_options,
-            association,
-            included_associations
+            association
           ).as_json
         end
       end

@@ -6,19 +6,16 @@ module Caprese
         # {http://jsonapi.org/format/#document-links Document Links}
         # {http://jsonapi.org/format/#document-resource-object-linkage Document Resource Relationship Linkage}
         # {http://jsonapi.org/format/#document-meta Document Meta}
-        def initialize(parent_serializer, serializable_resource_options, association, included_associations)
+        def initialize(parent_serializer, serializable_resource_options, association)
           @parent_serializer = parent_serializer
           @association = association
           @serializable_resource_options = serializable_resource_options
-          @included_associations = included_associations
         end
 
         def as_json
           hash = {}
 
-          # Only render a relationship's data if it was included, if Caprese.config.optimize_relationships
-          if association.include_data? &&
-            (!Caprese.config.optimize_relationships || included_associations[association.name])
+          if association.include_data?
             hash[:data] = data_for(association)
           end
 
@@ -33,7 +30,7 @@ module Caprese
 
         protected
 
-        attr_reader :parent_serializer, :serializable_resource_options, :association, :included_associations
+        attr_reader :parent_serializer, :serializable_resource_options, :association
 
         private
 
