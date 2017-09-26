@@ -198,6 +198,10 @@ describe 'Resource document structure', type: :request do
           it 'serializes the relationship data' do
             expect(post_params['relationships']['user']['data']).not_to be_nil
           end
+
+          it 'includes the relationship' do
+            expect(json['included'].detect { |r| r['type'] == 'users' }).not_to be_nil
+          end
         end
 
         context 'when association not included' do
