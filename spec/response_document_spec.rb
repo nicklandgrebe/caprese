@@ -204,7 +204,7 @@ describe 'Resource document structure', type: :request do
           subject(:query_str) { '?include=post' }
 
           it 'does not serialize the relationship data' do
-            expect(post_params['data']['relationships'].try(:[], 'user')).to be_nil
+            expect(post_params['relationships'].try(:[], 'user')).to be_nil
           end
         end
       end
