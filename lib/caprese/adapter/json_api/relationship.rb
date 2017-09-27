@@ -6,19 +6,16 @@ module Caprese
         # {http://jsonapi.org/format/#document-links Document Links}
         # {http://jsonapi.org/format/#document-resource-object-linkage Document Resource Relationship Linkage}
         # {http://jsonapi.org/format/#document-meta Document Meta}
-        def initialize(parent_serializer, serializable_resource_options, association, included_associations)
+        def initialize(parent_serializer, serializable_resource_options, association)
           @parent_serializer = parent_serializer
           @association = association
           @serializable_resource_options = serializable_resource_options
-          @included_associations = included_associations
         end
 
         def as_json
           hash = {}
 
-          # Only render a relationship's data if it was included, if Caprese.config.optimize_relationships
-          if association.options[:include_data] &&
-            (!Caprese.config.optimize_relationships || included_associations[association.name])
+          if association.include_data?
             hash[:data] = data_for(association)
           end
 
@@ -33,18 +30,42 @@ module Caprese
 
         protected
 
-        attr_reader :parent_serializer, :serializable_resource_options, :association, :included_associations
+        attr_reader :parent_serializer, :serializable_resource_options, :association
 
         private
 
+        # TODO(BF): Avoid db hit on belong_to_ releationship by using foreign_key on self
         def data_for(association)
-          serializer = association.serializer
-          if serializer.respond_to?(:each)
-            serializer.map { |s| ResourceIdentifier.new(s, serializable_resource_options).as_json }
-          elsif (virtual_value = association.options[:virtual_value])
+          if association.collection?
+            data_for_many(association)
+          else
+            data_for_one(association)
+          end
+        end
+
+        def data_for_one(association)
+          # TODO(BF): Process relationship without evaluating lazy_association
+          serializer = association.lazy_association.serializer
+          if (virtual_value = association.virtual_value)
             virtual_value
-          elsif serializer && serializer.object
+          elsif serializer && association.object
             ResourceIdentifier.new(serializer, serializable_resource_options).as_json
+          else
+            nil
+          end
+        end
+
+        def data_for_many(association)
+          # TODO(BF): Process relationship without evaluating lazy_association
+          collection_serializer = association.lazy_association.serializer
+          if collection_serializer.respond_to?(:each)
+            collection_serializer.map do |serializer|
+              ResourceIdentifier.new(serializer, serializable_resource_options).as_json
+            end
+          elsif (virtual_value = association.virtual_value)
+            virtual_value
+          else
+            []
           end
         end
 

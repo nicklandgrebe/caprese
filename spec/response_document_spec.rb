@@ -184,8 +184,8 @@ describe 'Resource document structure', type: :request do
       context 'when association not included' do
         subject(:query_str) { '' }
 
-        it 'does not serialize the relationship data' do
-          expect(json['data']['relationships']['post']['data']).to be_nil
+        it 'does not serialize the relationship' do
+          expect(json['data']['relationships'].try(:[], 'post')).to be_nil
         end
       end
 
@@ -198,13 +198,17 @@ describe 'Resource document structure', type: :request do
           it 'serializes the relationship data' do
             expect(post_params['relationships']['user']['data']).not_to be_nil
           end
+
+          it 'includes the relationship' do
+            expect(json['included'].detect { |r| r['type'] == 'users' }).not_to be_nil
+          end
         end
 
         context 'when association not included' do
           subject(:query_str) { '?include=post' }
 
           it 'does not serialize the relationship data' do
-            expect(json['data']['relationships']['user']['data']).to be_nil
+            expect(post_params['relationships'].try(:[], 'user')).to be_nil
           end
         end
       end
@@ -479,7 +483,7 @@ describe 'Resource document structure', type: :request do
         API::V1::CommentSerializer.instance_eval do
           belongs_to :article
         end
-        API::V1::PostSerializer.instance_eval do
+        API::V1::ArticleSerializer.instance_eval do
           attributes :name
         end
         API::V1::ApplicationController.class_eval do
@@ -511,7 +515,7 @@ describe 'Resource document structure', type: :request do
         API::V1::CommentSerializer.instance_eval do
           self._reflections = _reflections.except(:article)
         end
-        API::V1::PostSerializer.instance_eval do
+        API::V1::ArticleSerializer.instance_eval do
           self._attributes_data = _attributes_data.except(:name)
         end
 
@@ -616,16 +620,11 @@ describe 'Resource document structure', type: :request do
           end
         end
 
-        class API::V1::SubmitterSerializer < API::V1::UserSerializer
-          def json_key
-            :submitters
-          end
-        end
         API::V1::CommentSerializer.instance_eval do
           belongs_to :article
         end
-        API::V1::PostSerializer.instance_eval do
-          belongs_to :submitter, serializer: API::V1::SubmitterSerializer
+        API::V1::ArticleSerializer.instance_eval do
+          belongs_to :submitter
         end
         API::V1::ApplicationController.class_eval do
           def resource_type_aliases
@@ -662,7 +661,7 @@ describe 'Resource document structure', type: :request do
         API::V1::CommentSerializer.instance_eval do
           self._reflections = _reflections.except(:article)
         end
-        API::V1::PostSerializer.instance_eval do
+        API::V1::ArticleSerializer.instance_eval do
           self._reflections = _reflections.except(:submitter)
         end
 
