@@ -12,7 +12,7 @@ module Caprese
         #   object = Order<@token='asd27h'>
         #   links = { self: '/api/v1/orders/asd27hß' }
         link :self do
-          if(url = serializer.class.route_for(object))
+          if object.persisted? && (url = serializer.class.route_for(object))
             serializer.url_helpers.send(
               url,
               object.read_attribute(Caprese.config.resource_primary_key),
