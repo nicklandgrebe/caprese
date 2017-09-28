@@ -5,6 +5,10 @@ module API
 
       has_many :comments
       has_many :posts
+
+      link :self do
+        'override'
+      end
     end
   end
 end
