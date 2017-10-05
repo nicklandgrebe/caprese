@@ -18,8 +18,12 @@ module Caprese
         )
       end
 
-      rescue_from ActiveRecord::RecordInvalid do |e|
-        rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
+      rescue_from ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved do |e|
+        if e.record
+          rescue_with_handler RecordInvalidError.new(e.record, engaged_field_aliases)
+        else
+          rescue_with_handler ActionForbiddenError.new
+        end
       end
 
       rescue_from ActiveRecord::RecordNotDestroyed do |e|
@@ -291,7 +295,7 @@ module Caprese
         end
 
         ref
-      else
+      elsif !relationship_data.has_key?(:data)
         raise Error.new(
           field: "/data/relationships/#{relationship_name}/data",
           code: :blank

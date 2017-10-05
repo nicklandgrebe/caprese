@@ -274,12 +274,26 @@ describe 'Requests that persist data', type: :request do
 
         subject(:relationships) do
           {
-            user: { data: { type: 'users', id: other_user.id } },
+            user: { data: { type: 'users', id: other_user.id } }
           }
         end
 
         it 'updates the record' do
           expect(Comment.last.user).to eq(other_user)
+        end
+
+        context 'setting nil' do
+          subject(:comment) { create(:comment, :with_rating, user: user, post: resource) }
+
+          subject(:relationships) do
+            {
+              rating: { data: nil }
+            }
+          end
+
+          it 'updates the record' do
+            expect(Comment.last.rating).to be_nil
+          end
         end
       end
     end
@@ -289,6 +303,18 @@ describe 'Requests that persist data', type: :request do
         subject(:attributes) do
           {
             body: ''
+          }
+        end
+
+        it 'fails to create the record with errors' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/body')
+        end
+      end
+
+      context 'callback' do
+        subject(:attributes) do
+          {
+            body: 'trigger_callback'
           }
         end
 

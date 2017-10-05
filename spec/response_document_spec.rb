@@ -66,6 +66,14 @@ describe 'Resource document structure', type: :request do
       expect(json['data']['links']['self']).to eq(Rails.application.routes.url_helpers.api_v1_comment_url(resource))
     end
 
+    context 'when overriden self link' do
+      subject(:resource) { User.first }
+
+      it 'overrides self link' do
+        expect(json['data']['links']['self']).to eq('override')
+      end
+    end
+
     # TODO: Implement and spec only_path option
 
     context 'when resource is serialized by parent resource model serializer' do
