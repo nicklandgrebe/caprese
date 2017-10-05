@@ -13,7 +13,7 @@ class Comment < ApplicationRecord
   def body_ok
     if body == 'trigger_callback'
       errors.add(:body)
-      false
+      throw :abort
     end
   end
 end
