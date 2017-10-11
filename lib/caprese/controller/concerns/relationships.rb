@@ -248,30 +248,34 @@ module Caprese
           relationship_instance_with_errors.errors.add(field, error.code, t: error.t)
         end
 
-        if relationship_instance_with_errors.errors.empty? &&
-          (relationship_instance_with_errors = relationship_resources.reject(&:valid?).first).nil?
+        if relationship_instance_with_errors.errors.empty?
+          if(inverse_reflection = queried_record.class.reflect_on_association(relationship_name).inverse_of)
+            relationship_resources.each { |r| r.send("#{inverse_reflection.name}=", queried_record) }
+          end
 
-          successful =
-            case queried_association.reflection.macro
-            when :has_many
-              if request.patch?
-                queried_record.send("#{relationship_name}=", relationship_resources)
-              elsif request.post?
-                queried_record.send(relationship_name).push relationship_resources
-              elsif request.delete?
-                queried_record.send(relationship_name).delete relationship_resources
+          if(relationship_instance_with_errors = relationship_resources.reject(&:valid?).first).nil?
+            successful =
+              case queried_association.reflection.macro
+              when :has_many
+                if request.patch?
+                  queried_record.send("#{relationship_name}=", relationship_resources)
+                elsif request.post?
+                  queried_record.send(relationship_name).push relationship_resources
+                elsif request.delete?
+                  queried_record.send(relationship_name).delete relationship_resources
+                end
+              when :has_one
+                if request.patch?
+                  queried_record.send("#{relationship_name}=", relationship_resources[0])
+                  relationship_resources[0].save if relationship_resources[0].present?
+                end
+              when :belongs_to
+                if request.patch?
+                  queried_record.send("#{relationship_name}=", relationship_resources[0])
+                  queried_record.save
+                end
               end
-            when :has_one
-              if request.patch?
-                queried_record.send("#{relationship_name}=", relationship_resources[0])
-                relationship_resources[0].save if relationship_resources[0].present?
-              end
-            when :belongs_to
-              if request.patch?
-                queried_record.send("#{relationship_name}=", relationship_resources[0])
-                queried_record.save
-              end
-            end
+          end
         end
       end
 
