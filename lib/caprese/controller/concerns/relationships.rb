@@ -236,7 +236,7 @@ module Caprese
 
         relationship_resources = Array.wrap(records_for_relationship(
           queried_record,
-          nested_params_for(relationship_name, permitted_params_for(:update)),
+          nested_params_for(params[:relationship].to_sym, permitted_params_for(:update)),
           relationship_name,
           ActionController::Parameters.new({ 'data' => nil }.merge(params))
         ))
