@@ -249,7 +249,7 @@ module Caprese
         end
 
         if relationship_instance_with_errors.errors.empty?
-          if(inverse_reflection = queried_record.class.reflect_on_association(relationship_name).inverse_of)
+          if !request.delete? && (inverse_reflection = queried_record.class.reflect_on_association(relationship_name).inverse_of)
             relationship_resources.each { |r| r.send("#{inverse_reflection.name}=", queried_record) }
           end
 
@@ -264,6 +264,8 @@ module Caprese
                 elsif request.delete?
                   queried_record.send(relationship_name).delete relationship_resources
                 end
+                
+                true
               when :has_one
                 if request.patch?
                   queried_record.send("#{relationship_name}=", relationship_resources[0])
