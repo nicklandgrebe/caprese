@@ -228,47 +228,57 @@ module Caprese
     #
     # PATCH/POST/DELETE /api/v1/:controller/:id/relationships/:relationship
     def update_relationship_definition
+      successful = false
+
       if queried_association &&
         flattened_keys_for(permitted_params_for(:update)).include?(params[:relationship].to_sym)
-
-        relationship_resources =
-          Array.wrap(params[:data]).map do |resource_identifier|
-            get_record!(
-              resource_identifier[:type],
-              column = self.config.resource_primary_key,
-              resource_identifier[column]
-            )
-          end
-
         relationship_name = queried_association.reflection.name
 
-        successful =
-          case queried_association.reflection.macro
-          when :has_many
-            if request.patch?
-              queried_record.send("#{relationship_name}=", relationship_resources)
-            elsif request.post?
-              queried_record.send(relationship_name).push relationship_resources
-            elsif request.delete?
-              queried_record.send(relationship_name).delete relationship_resources
+        relationship_resources = Array.wrap(records_for_relationship(
+          queried_record,
+          nested_params_for(relationship_name, permitted_params_for(:update)),
+          relationship_name,
+          ActionController::Parameters.new({ 'data' => nil }.merge(params))
+        ))
+
+        relationship_instance_with_errors = queried_association.reflection.klass.new
+        queried_record.errors.each do |field, error|
+          field = field.to_s.gsub(/#{relationship_name}\.*/, '')
+          field = :base if field.blank?
+          relationship_instance_with_errors.errors.add(field, error.code, t: error.t)
+        end
+
+        if relationship_instance_with_errors.errors.empty? &&
+          (relationship_instance_with_errors = relationship_resources.reject(&:valid?).first).nil?
+
+          successful =
+            case queried_association.reflection.macro
+            when :has_many
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources)
+              elsif request.post?
+                queried_record.send(relationship_name).push relationship_resources
+              elsif request.delete?
+                queried_record.send(relationship_name).delete relationship_resources
+              end
+            when :has_one
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources[0])
+                relationship_resources[0].save if relationship_resources[0].present?
+              end
+            when :belongs_to
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources[0])
+                queried_record.save
+              end
             end
-          when :has_one
-            if request.patch?
-              queried_record.send("#{relationship_name}=", relationship_resources[0])
-              relationship_resources[0].save if relationship_resources[0].present?
-            end
-          when :belongs_to
-            if request.patch?
-              queried_record.send("#{relationship_name}=", relationship_resources[0])
-              queried_record.save
-            end
-          end
-      else
-        successful = false
+        end
       end
 
       if successful
         head :no_content
+      elsif relationship_instance_with_errors
+        fail RecordInvalidError.new(relationship_instance_with_errors, engaged_field_aliases)
       else
         fail ActionForbiddenError.new
       end
