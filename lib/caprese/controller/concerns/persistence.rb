@@ -254,12 +254,16 @@ module Caprese
         # TODO: Add checkme for relationship_name to ensure that format is correct (not Array when actually Record, vice versa)
         #   No relationship exists as well
 
-        attributes[actual_relationship_name] = records_for_relationship(
-          record,
-          nested_params_for(relationship_name, permitted_params),
-          relationship_name,
-          relationship_data
-        )
+        begin
+          attributes[actual_relationship_name] = records_for_relationship(
+            record,
+            nested_params_for(relationship_name, permitted_params),
+            relationship_name,
+            relationship_data
+          )
+        rescue Caprese::RecordNotFoundError => e
+          record.errors.add(relationship_name, :not_found, t: e.t.slice(:value))
+        end
       end
 
       if record.respond_to?(:assign_attributes)
@@ -313,16 +317,11 @@ module Caprese
       if resource_identifier[:type]
         # { type: '...', id: '...' }
         if (id = resource_identifier[:id])
-          begin
-            get_record!(
-              resource_identifier[:type],
-              Caprese.config.resource_primary_key,
-              id
-            )
-          rescue Caprese::RecordNotFoundError => e
-            owner.errors.add(relationship_name, :not_found, t: { value: id })
-            nil
-          end
+          get_record!(
+            resource_identifier[:type],
+            Caprese.config.resource_primary_key,
+            id
+          )
 
         # { type: '...', attributes: { ... } }
         elsif contains_constructable_data?(resource_identifier)
