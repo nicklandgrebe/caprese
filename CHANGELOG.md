@@ -165,3 +165,7 @@
   * New behavior: Relationships in serializers use the name of the relationship as an assumption about the serializer for that relationship
     * Example: `has_many :productos => ProductoSerializer`
   * Can override by passing any serializer: `has_many :productos, serializer: ProductSerializer`
+  
+## 0.4.1
+
+* Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
