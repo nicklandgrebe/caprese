@@ -170,6 +170,8 @@ module Caprese
           hash[:errors] =
             if serializer.resource_errors?
               Error.resource_errors(serializer, instance_options)
+            elsif serializer.document_errors?
+              Error.document_errors(serializer, instance_options)
             else
               Error.param_errors(serializer, instance_options)
             end

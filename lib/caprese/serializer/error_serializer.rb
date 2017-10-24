@@ -7,6 +7,10 @@ module Caprese
         object.try(:record).present?
       end
 
+      def document_errors?
+        object.try(:document).present?
+      end
+
       # Applies aliases to fields of RecordInvalid record's errors if aliases have been applied
       # @see controller/concerns/aliasing#engaged_field_aliases
       # Otherwise returns normal error fields as_json hash
