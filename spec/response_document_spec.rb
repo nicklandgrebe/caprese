@@ -89,33 +89,6 @@ describe 'Resource document structure', type: :request do
   end
 
   describe 'relationships' do
-    context 'when data parameter missing' do
-      describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
-
-        let(:data) do
-          {
-            type: 'comments',
-            attributes: {
-              body: 'A body'
-            },
-            relationships: {
-              post: {
-                type: 'post',
-                attributes: {
-                  title: 'This title'
-                }
-              }
-            }
-          }
-        end
-
-        it 'responds with error pointer to data/relationship/data' do
-          expect(json['errors'][0]['source']['parameter']).to eq('/data/relationships/post/data')
-        end
-      end
-    end
-
     context 'when scoping relationships' do
       let(:post) { create :post }
       let!(:comments)       { create_list :comment, 2, post: post, user: post.user }

@@ -127,12 +127,32 @@ describe 'Managing relationships of resources', type: :request do
         context 'relationship resource cannot be found' do
           subject(:data) { { id: relationship_resource.id + 1000, type: 'comments' } }
 
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
           it 'responds with error source pointer to data' do
             expect(json['errors'][0]['source']['pointer']).to eq('/data')
           end
 
           it 'responds with error code not_found' do
             expect(json['errors'][0]['code']).to eq('not_found')
+          end
+        end
+
+        context 'relationship resource has no type' do
+          subject(:data) { { id: relationship_resource.id } }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/type')
+          end
+
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
           end
         end
       end
@@ -162,100 +182,19 @@ describe 'Managing relationships of resources', type: :request do
           expect(resource.comments.last).to eq(relationship_resource)
         end
 
-        context 'when new relationship resources' do
-          subject(:data) do
-            [
-              {
-                type: 'comments',
-                attributes: {
-                  body: body1
-                }
-              },
-              {
-                type: 'comments',
-                attributes: {
-                  body: body2
-                }
-              }
-            ]
+        context 'when data nil' do
+          let(:data) { nil }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
           end
 
-          let(:body1) { 'Title 1' }
-          let(:body2) { 'Title 2' }
-
-          it 'appends created relationship resource' do
-            expect(resource.comments.last(2)[0].body).to eq(body1)
-            expect(resource.comments.last(2)[1].body).to eq(body2)
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data')
           end
 
-          context 'when data type missing' do
-            subject(:data) do
-              [
-                {
-                  attributes: {
-                    body: body2
-                  }
-                }
-              ]
-            end
-
-            it 'responds with 422' do
-              expect(response.status).to eq(422)
-            end
-
-            it 'responds with error source pointer to type' do
-              expect(json['errors'][0]['source']['pointer']).to eq('/data/type')
-            end
-          end
-
-          context 'when resource invalid' do
-            let(:body1) { '' }
-
-            it 'responds with 422' do
-              expect(response.status).to eq(422)
-            end
-
-            it 'responds with error source pointer to body' do
-              expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/body')
-            end
-          end
-
-          context 'when aliasing attribute' do
-            let(:set_up_aliases) do
-              Comment.instance_eval do
-                def caprese_field_aliases
-                  {
-                    title: :body
-                  }
-                end
-              end
-            end
-
-            after do
-              Comment.instance_eval do
-                def caprese_field_aliases
-                  {}
-                end
-              end
-            end
-
-            subject(:data) do
-              set_up_aliases
-              [
-                {
-                  type: 'comments',
-                  attributes: {
-                    title: title
-                  }
-                }
-              ]
-            end
-
-            let(:title) { 'Aliased body' }
-
-            it 'appends created relationship resource' do
-              expect(resource.comments.last.body).to eq(title)
-            end
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
           end
         end
       end
@@ -270,6 +209,22 @@ describe 'Managing relationships of resources', type: :request do
 
         it 'deletes from the relationship' do
           expect(resource.comments.count).to eq(original_comment_count - 1)
+        end
+
+        context 'when data nil' do
+          let(:data) { nil }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data')
+          end
+
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
+          end
         end
       end
     end

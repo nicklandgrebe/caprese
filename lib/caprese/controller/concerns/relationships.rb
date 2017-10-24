@@ -234,61 +234,56 @@ module Caprese
         flattened_keys_for(permitted_params_for(:update)).include?(params[:relationship].to_sym)
         relationship_name = queried_association.reflection.name
 
-        relationship_instance_for_errors_base = queried_association.reflection.klass.new
+        relationship_resources = []
         begin
           relationship_resources = Array.wrap(records_for_relationship(
             queried_record,
-            nested_params_for(params[:relationship].to_sym, permitted_params_for(:update)),
+            [],
             relationship_name,
-            ActionController::Parameters.new({ 'data' => nil }.merge(params))
+            data_params
           ))
+        rescue ActionController::ParameterMissing => e
+          # Only PATCH requests are allowed to have no :data (when clearing relationship)
+          raise e unless request.patch?
         rescue Caprese::RecordNotFoundError => e
-          relationship_instance_for_errors_base.errors.add(:base, :not_found, t: e.t.slice(:value))
+          raise RequestDocumentInvalidError.new(field: :base, code: :not_found, t: e.t.slice(:value))
         end
 
-        queried_record.errors.each do |field, error|
-          field = field.to_s.gsub(/#{relationship_name}\.*/, '')
-          field = :base if field.blank?
-          relationship_instance_for_errors_base.errors.add(field, error.code, t: error.t)
+        # Validate that if we assign queried_record as the inverse of the relationship, the relationship records are
+        # still valid
+        if !request.delete? && (inverse_reflection = queried_record.class.reflect_on_association(relationship_name).inverse_of)
+          relationship_resources.each { |r| r.send("#{inverse_reflection.name}=", queried_record) }
         end
 
-        if relationship_instance_for_errors_base.errors.empty?
-          if !request.delete? && (inverse_reflection = queried_record.class.reflect_on_association(relationship_name).inverse_of)
-            relationship_resources.each { |r| r.send("#{inverse_reflection.name}=", queried_record) }
-          end
-
-          if(relationship_instance_for_errors_base = relationship_resources.reject(&:valid?).first).nil?
-            successful =
-              case queried_association.reflection.macro
-              when :has_many
-                if request.patch?
-                  queried_record.send("#{relationship_name}=", relationship_resources)
-                elsif request.post?
-                  queried_record.send(relationship_name).push relationship_resources
-                elsif request.delete?
-                  queried_record.send(relationship_name).delete relationship_resources
-                end
-
-                true
-              when :has_one
-                if request.patch?
-                  queried_record.send("#{relationship_name}=", relationship_resources[0])
-                  relationship_resources[0].save if relationship_resources[0].present?
-                end
-              when :belongs_to
-                if request.patch?
-                  queried_record.send("#{relationship_name}=", relationship_resources[0])
-                  queried_record.save
-                end
+        if relationship_resources.all?(&:valid?)
+          successful =
+            case queried_association.reflection.macro
+            when :has_many
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources)
+              elsif request.post?
+                queried_record.send(relationship_name).push relationship_resources
+              elsif request.delete?
+                queried_record.send(relationship_name).delete relationship_resources
               end
-          end
+
+              true
+            when :has_one
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources[0])
+                relationship_resources[0].save if relationship_resources[0].present?
+              end
+            when :belongs_to
+              if request.patch?
+                queried_record.send("#{relationship_name}=", relationship_resources[0])
+                queried_record.save
+              end
+            end
         end
       end
 
       if successful
         head :no_content
-      elsif relationship_instance_for_errors_base
-        fail RecordInvalidError.new(relationship_instance_for_errors_base, engaged_field_aliases)
       else
         fail ActionForbiddenError.new
       end

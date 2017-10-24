@@ -12,10 +12,7 @@ module Caprese
       # @note The only instance this may be called, at least in JSON API settings, is a
       #   missing params['data'] param
       rescue_from ActionController::ParameterMissing do |e|
-        rescue_with_handler Error.new(
-          field: e.param,
-          code: :blank
-        )
+        rescue_with_handler RequestDocumentInvalidError.new(field: :base)
       end
 
       rescue_from ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved do |e|
@@ -251,18 +248,32 @@ module Caprese
           engaged_field_aliases_object[relationship_name] = {}
         end
 
-        # TODO: Add checkme for relationship_name to ensure that format is correct (not Array when actually Record, vice versa)
-        #   No relationship exists as well
-
         begin
-          attributes[actual_relationship_name] = records_for_relationship(
+          raise RequestDocumentInvalidError.new(field: :base) unless relationship_data.has_key?(:data)
+
+          relationship_result = records_for_relationship(
             record,
             nested_params_for(relationship_name, permitted_params),
             relationship_name,
-            relationship_data
+            relationship_data[:data]
           )
+
+          reflection = record.association(actual_relationship_name).reflection
+          if (reflection.collection? && !relationship_result.is_a?(Array)) ||
+            (!reflection.collection? && relationship_result.is_a?(Array))
+
+            raise RequestDocumentInvalidError.new(field: :base)
+          end
+
+          attributes[actual_relationship_name] = relationship_result
         rescue Caprese::RecordNotFoundError => e
           record.errors.add(relationship_name, :not_found, t: e.t.slice(:value))
+        rescue RequestDocumentInvalidError => e
+          record.errors.add(
+            e.field == :base ? relationship_name : "#{relationship_name}.#{e.field}",
+            e.code,
+            t: e.t.except(:field, :field_title)
+          )
         end
       end
 
@@ -281,8 +292,8 @@ module Caprese
     # @param [Hash,Array<Hash>] relationship_data the resource identifier data to use to find/build records
     # @return [ActiveRecord::Base,Array<ActiveRecord::Base>] the record(s) for the relationship
     def records_for_relationship(owner, permitted_params, relationship_name, relationship_data)
-      if relationship_data[:data].is_a?(Array)
-        relationship_data[:data].map do |relationship_data_item|
+      if relationship_data.is_a?(Array)
+        relationship_data.map do |relationship_data_item|
           ref = record_for_relationship(owner, relationship_name, relationship_data_item)
 
           if ref && contains_constructable_data?(relationship_data_item)
@@ -291,19 +302,14 @@ module Caprese
 
           ref
         end
-      elsif relationship_data[:data].present?
-        ref = record_for_relationship(owner, relationship_name, relationship_data[:data])
+      elsif relationship_data.present?
+        ref = record_for_relationship(owner, relationship_name, relationship_data)
 
-        if ref && contains_constructable_data?(relationship_data[:data])
-          assign_record_attributes(ref, permitted_params, relationship_data[:data], parent_relationship_name: relationship_name)
+        if ref && contains_constructable_data?(relationship_data)
+          assign_record_attributes(ref, permitted_params, relationship_data, parent_relationship_name: relationship_name)
         end
 
         ref
-      elsif !relationship_data.has_key?(:data)
-        raise Error.new(
-          field: "/data/relationships/#{relationship_name}/data",
-          code: :blank
-        )
       end
     end
 
@@ -329,13 +335,11 @@ module Caprese
 
         # { type: '...' }
         else
-          owner.errors.add(relationship_name)
-          nil
+          raise RequestDocumentInvalidError.new(field: :base)
         end
       else
         # { id: '...' } && { attributes: { ... } }
-        owner.errors.add("#{relationship_name}.type")
-        nil
+        raise RequestDocumentInvalidError.new(field: :type)
       end
     end
 
