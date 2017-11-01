@@ -16,7 +16,7 @@ module API
         [
           :body, :content, :user,
           post: [:title, user: [:name]],
-          article: [:title, user: [:name]],
+          article: [:name, :title, user: [:name], submitter: [:name]],
           rating: [:value]
         ]
       end

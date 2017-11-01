@@ -388,8 +388,12 @@ describe 'Requests that persist data', type: :request do
       context 'when invalid' do
         let(:body) { '' }
 
-        it 'responds with 403' do
-          expect(response.status).to eq(403)
+        it 'responds with 422' do
+          expect(response.status).to eq(422)
+        end
+
+        it 'responds with error pointer to relationship field' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/comments/data/attributes/body')
         end
 
         it 'does not update relationship' do

@@ -87,6 +87,34 @@ module Caprese
       record_class(type).all
     end
 
+    # Given a resource identifier, finds or builds a resource
+    #
+    # @param [Hash] resource_identifier the resource identifier for the resource
+    # @return [ActiveRecord::Base] the found or built resource for the relationship
+    def record_for_resource_identifier(resource_identifier)
+      if resource_identifier[:type]
+        # { type: '...', id: '...' }
+        if (id = resource_identifier[:id])
+          get_record!(
+            resource_identifier[:type],
+            Caprese.config.resource_primary_key,
+            id
+          )
+
+          # { type: '...', attributes: { ... } }
+        elsif contains_constructable_data?(resource_identifier)
+          record_scope(resource_identifier[:type].to_sym).build
+
+          # { type: '...' }
+        else
+          raise RequestDocumentInvalidError.new(field: :base)
+        end
+      else
+        # { id: '...' } && { attributes: { ... } }
+        raise RequestDocumentInvalidError.new(field: :type)
+      end
+    end
+
     # Gets a record in a scope using a column/value to search by
     #
     # @example
