@@ -52,13 +52,13 @@ module Caprese
         # Gets a serializer for a klass, either as the serializer explicitly defined
         # for this class, or as a serializer defined for one of the klass's parents
         #
-        # @param [Class] klass the klass to get the serializer for
+        # @param [Class,String] klass the klass or klass name to get the serializer for
         # @return [Serializer] the serializer for the class
         def get_serializer_for(klass)
           begin
-            namespaced_module("#{klass.name}Serializer").constantize
-          rescue NameError => e
-            get_serializer_for(klass.superclass) if klass.superclass
+            namespaced_module("#{klass.is_a?(Class) ? klass.name : klass}Serializer").constantize
+          rescue NameError
+            get_serializer_for(klass.superclass) if klass.is_a?(Class) && klass.superclass
           end
         end
 

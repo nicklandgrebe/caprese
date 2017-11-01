@@ -153,3 +153,19 @@
 ## 0.3.27
 
 * Fix bug in JSON API adapter that inappropriately aliases relationships
+
+## 0.4.0
+
+* Modifies behavior of `config.optimize_relationships`
+  * Original behavior: Only sends `links` of relationships (no `data`) except those that are in `includes`
+  * New behavior: Relationship is omitted from response entirely except those that are in `includes`
+* **Breaking:** Modifies behavior of serializer relationships
+  * Original behavior: Use the serializer corresponding to the class of objects for the relationships
+    * Example: `has_many :productos => ProductSerializer`
+  * New behavior: Relationships in serializers use the name of the relationship as an assumption about the serializer for that relationship
+    * Example: `has_many :productos => ProductoSerializer`
+  * Can override by passing any serializer: `has_many :productos, serializer: ProductSerializer`
+  
+## 0.4.1
+
+* Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
