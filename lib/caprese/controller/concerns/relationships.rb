@@ -232,7 +232,7 @@ module Caprese
         flattened_keys_for(permitted_params_for(:update)).include?(params[:relationship].to_sym)
 
         relationship_resources =
-          Array.wrap(params[:data]).map do |resource_identifier|
+          Array.wrap(params[:data]).reject(&:empty?).map do |resource_identifier|
             get_record!(
               resource_identifier[:type],
               column = self.config.resource_primary_key,
