@@ -340,7 +340,7 @@ module Caprese
             raise RequestDocumentInvalidError.new(field: :base)
           end
 
-          if reflection.collection? &&
+          if record.persisted? && reflection.collection? &&
             (inverse_reflection = record.class.reflect_on_association(actual_relationship_name).inverse_of)
 
             relationship_result.each { |r| r.send("#{inverse_reflection.name}=", record) }
