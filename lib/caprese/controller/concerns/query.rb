@@ -92,18 +92,22 @@ module Caprese
     # @param [Hash] resource_identifier the resource identifier for the resource
     # @return [ActiveRecord::Base] the found or built resource for the relationship
     def record_for_resource_identifier(resource_identifier)
-      if resource_identifier[:type]
+      if (type = resource_identifier[:type])
         # { type: '...', id: '...' }
         if (id = resource_identifier[:id])
-          get_record!(
-            resource_identifier[:type],
-            Caprese.config.resource_primary_key,
-            id
-          )
+          begin
+            get_record!(
+              type,
+              Caprese.config.resource_primary_key,
+              id
+            )
+          rescue RecordNotFoundError => e
+            raise e unless record_scope(type.to_sym).is_a?(ActiveRecord::NullRelation)
+          end
 
           # { type: '...', attributes: { ... } }
         elsif contains_constructable_data?(resource_identifier)
-          record_scope(resource_identifier[:type].to_sym).build
+          record_scope(type.to_sym).build
 
           # { type: '...' }
         else
