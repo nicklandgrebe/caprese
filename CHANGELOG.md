@@ -169,3 +169,7 @@
 ## 0.4.1
 
 * Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
+
+# Master
+
+* Add `relationship_scope(relationship_name, scope) => scope` method for all relationships in serializers, allowing override for custom scoping

@@ -5,7 +5,7 @@ module Caprese
     module Relationships
       extend ActiveSupport::Concern
 
-      # Applies further scopes to a collection association when rendered as part of included document
+      # Applies further scopes to a singular or collection association when rendered as part of included document
       # @note Can be overridden to customize scoping at a per-relationship level
       #
       # @example
@@ -15,11 +15,13 @@ module Caprese
       #       scope.by_merchant(...)
       #     when :orders
       #       scope.by_user(...)
+      #     when :user
+      #       # change singular user response
       #     end
       #   end
       #
       # @param [String] name the name of the association
-      # @param [Relation] scope the scope corresponding to a collection association
+      # @param [Relation,Record] scope the scope corresponding to a collection association relation or singular record
       def relationship_scope(name, scope)
         scope
       end
@@ -31,10 +33,6 @@ module Caprese
             merge_serializer_option(name, options),
             &build_association_block(name)
           )
-
-          define_method name do
-            self.relationship_scope(name, object.send(object.class.caprese_unalias_field(name)))
-          end
         end
 
         def has_one(name, options = {}, &block)
@@ -109,7 +107,7 @@ module Caprese
               end
             end
 
-            :nil
+            serializer.relationship_scope(reflection_name, object.send(object.class.caprese_unalias_field(name)))
           end
         end
 
