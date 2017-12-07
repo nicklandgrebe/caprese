@@ -4,7 +4,7 @@ class Comment < ApplicationRecord
 
   has_one :rating
 
-  validates_presence_of :body
+  validates_presence_of :body, :post
 
   validates_associated :rating
 

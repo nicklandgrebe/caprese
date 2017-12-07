@@ -1,7 +1,7 @@
 # TODO: Remove in favor of Rails 5 error details and dynamically setting i18n_scope
 module Caprese
   class Error < StandardError
-    attr_reader :field, :code, :header
+    attr_reader :field, :code, :header, :t
 
     # Initializes a new error
     #
@@ -22,7 +22,9 @@ module Caprese
       @field = field
       @code = code
 
-      @t = t
+      # field is nil if :base
+      field_name = field || model
+      @t = { field: field_name.to_s, field_title: field_name.to_s.titleize }.merge t
 
       @header = { status: :bad_request }
     end
@@ -98,14 +100,6 @@ module Caprese
         field: field,
         message: full_message
       }
-    end
-
-    # Adds field and capitalized Field title to the translation params for every error
-    # and returns them
-    #
-    # @return [Hash] the full translation params of the error
-    def t
-      @t.merge(field: @field, field_title: @field.to_s.titleize)
     end
 
     private

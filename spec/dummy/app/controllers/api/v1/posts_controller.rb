@@ -8,7 +8,7 @@ module API
       end
 
       def permitted_update_params
-        [:title, :user, :comments]
+        [:title, :user, comments: [:body, :title]]
       end
     end
   end

@@ -5,7 +5,7 @@ module Caprese
   module Aliasing
     extend ActiveSupport::Concern
 
-    # Records all of the field aliases engaged by the API request (called in `assign_record_attributes` using comparison)
+    # Records all of the field aliases engaged by the API request (called in `assign_changes_from_document` using comparison)
     # so that when the response is returned, the appropriate alias is used in reference to fields
     #
     # Success: @todo

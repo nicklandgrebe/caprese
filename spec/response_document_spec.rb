@@ -89,33 +89,6 @@ describe 'Resource document structure', type: :request do
   end
 
   describe 'relationships' do
-    context 'when data parameter missing' do
-      describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
-
-        let(:data) do
-          {
-            type: 'comments',
-            attributes: {
-              body: 'A body'
-            },
-            relationships: {
-              post: {
-                type: 'post',
-                attributes: {
-                  title: 'This title'
-                }
-              }
-            }
-          }
-        end
-
-        it 'responds with error pointer to data/relationship/data' do
-          expect(json['errors'][0]['source']['parameter']).to eq('/data/relationships/post/data')
-        end
-      end
-    end
-
     context 'when scoping relationships' do
       let(:post) { create :post }
       let!(:comments)       { create_list :comment, 2, post: post, user: post.user }
@@ -343,6 +316,28 @@ describe 'Resource document structure', type: :request do
           expect(Comment.last.body).to eq(content)
         end
       end
+
+      describe 'patch' do
+        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        let(:existing_resource) { create :comment }
+        let(:content) { 'mah awesome body!' }
+
+        let(:data) do
+          {
+            type: 'comments',
+            id: existing_resource.id.to_s,
+            attributes: {
+              content: content
+            }
+          }
+        end
+
+        before { existing_resource.reload }
+
+        it 'converts aliased attribute' do
+          expect(existing_resource.body).to eq(content)
+        end
+      end
     end
 
     describe 'aliasing a relationship' do
@@ -426,6 +421,30 @@ describe 'Resource document structure', type: :request do
         end
       end
 
+      describe 'patch' do
+        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        let(:existing_resource) { create :comment }
+        let(:article) { create :post }
+
+        let(:data) do
+          {
+            type: 'comments',
+            id: existing_resource.id.to_s,
+            relationships: {
+              article: {
+                data: { type: 'posts', id: article.id.to_s }
+              }
+            }
+          }
+        end
+
+        before { existing_resource.reload }
+
+        it 'converts aliased relationship' do
+          expect(existing_resource.post).to eq(article)
+        end
+      end
+
       describe 'relationship endpoints' do
         let(:comment) { comments.first }
 
@@ -463,6 +482,144 @@ describe 'Resource document structure', type: :request do
 
           it 'persists the aliased type resource relationship' do
             expect(comment.post).to eq(my_post)
+          end
+        end
+      end
+    end
+
+    describe 'aliasing an attribute of an unaliased relationship' do
+      before do
+        Post.instance_eval do
+          def caprese_field_aliases
+            {
+              name: :title
+            }
+          end
+        end
+        API::V1::PostSerializer.instance_eval do
+          attributes :name
+        end
+      end
+
+      after do
+        Post.instance_eval do
+          def caprese_field_aliases
+            {}
+          end
+        end
+
+        API::V1::PostSerializer.instance_eval do
+          self._attributes_data = _attributes_data.except(:name)
+        end
+      end
+
+      describe 'get' do
+        before { get "/api/v1/comments#{query_str}" }
+        let(:query_str) { '?include=post' }
+
+        it 'aliases attribute' do
+          expect(json['included'][0]['attributes']['name']).not_to be_nil
+        end
+
+        context 'select' do
+          let(:query_str) { '?include=post&fields[posts]=name' }
+
+          it 'selects the aliased field' do
+            expect(json['included'][0]['attributes']['name']).not_to be_nil
+          end
+
+          it 'does not select other fields' do
+            expect(json['included'][0]['attributes']['created_at']).to be_nil
+          end
+        end
+      end
+
+      describe 'post' do
+        before { post '/api/v1/comments', { data: data } }
+
+        let(:name) { 'A valid name' }
+
+        let(:data) do
+          {
+            type: 'comments',
+            attributes: {
+              body: 'A body'
+            },
+            relationships: {
+              post: {
+                data: {
+                  type: 'posts',
+                  attributes: {
+                    name: name
+                  },
+                  relationships: {
+                    user: {
+                      data: {
+                        type: 'users',
+                        id: create(:user).id.to_s
+                      }
+                    }
+                  }
+                }
+              },
+              user: {
+                data: {
+                  type: 'users',
+                  id: create(:user).id.to_s
+                }
+              }
+            }
+          }
+        end
+
+        it 'aliases attribute' do
+          expect(Comment.last.post.title).to eq(name)
+        end
+
+        context 'when attribute invalid' do
+          let(:name) { '' }
+
+          it 'responds with error source pointer to aliased relationship aliased attribute' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/attributes/name')
+          end
+        end
+      end
+
+      describe 'patch' do
+        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        let(:existing_resource) { create :comment }
+
+        let(:name) { 'A valid name' }
+
+        let(:data) do
+          {
+            type: 'comments',
+            id: existing_resource.id.to_s,
+            relationships: {
+              post: {
+                data: {
+                  type: 'posts',
+                  id: existing_resource.post.id.to_s,
+                  attributes: {
+                    name: name
+                  }
+                }
+              }
+            }
+          }
+        end
+
+        before { existing_resource.reload }
+
+        it 'aliases attribute' do
+          expect(existing_resource.post.title).to eq(name)
+        end
+
+        context 'when attribute invalid' do
+          let(:name) { '' }
+
+          it 'responds with error source pointer to aliased relationship aliased attribute' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/attributes/name')
           end
         end
       end
@@ -597,6 +754,45 @@ describe 'Resource document structure', type: :request do
           expect(Comment.last.post.title).to eq(name)
         end
         
+        context 'when attribute invalid' do
+          let(:name) { '' }
+
+          it 'responds with error source pointer to aliased relationship aliased attribute' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/article/data/attributes/name')
+          end
+        end
+      end
+
+      describe 'patch' do
+        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        let(:existing_resource) { create :comment }
+
+        let(:name) { 'A valid name' }
+
+        let(:data) do
+          {
+            type: 'comments',
+            id: existing_resource.id.to_s,
+            relationships: {
+              article: {
+                data: {
+                  type: 'articles',
+                  id: existing_resource.post.id.to_s,
+                  attributes: {
+                    name: name
+                  }
+                }
+              }
+            }
+          }
+        end
+
+        before { existing_resource.reload }
+
+        it 'aliases attribute' do
+          expect(existing_resource.post.title).to eq(name)
+        end
+
         context 'when attribute invalid' do
           let(:name) { '' }
 
@@ -743,6 +939,50 @@ describe 'Resource document structure', type: :request do
 
         it 'aliases relationship' do
           expect(Comment.last.post.user.id.to_s).to eq(submitter_id)
+        end
+
+        context 'when relationship invalid' do
+          let(:submitter_id) { 'a' }
+
+          it 'responds with error source pointer to aliased relationship aliased relationship' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/article/data/relationships/submitter/data')
+          end
+        end
+      end
+
+      describe 'patch' do
+        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        let(:existing_resource) { create :comment }
+
+        let(:submitter_id) { create(:user).id.to_s }
+
+        let(:data) do
+          {
+            type: 'comments',
+            id: existing_resource.id.to_s,
+            relationships: {
+              article: {
+                data: {
+                  type: 'articles',
+                  id: existing_resource.post.id.to_s,
+                  relationships: {
+                    submitter: {
+                      data: {
+                        type: 'submitters',
+                        id: submitter_id
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        end
+
+        before { existing_resource.reload }
+
+        it 'aliases relationship' do
+          expect(existing_resource.post.user.id.to_s).to eq(submitter_id)
         end
 
         context 'when relationship invalid' do
