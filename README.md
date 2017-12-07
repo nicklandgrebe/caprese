@@ -3,7 +3,9 @@
 Caprese is a Rails library for creating RESTful APIs in as few words as possible. It handles all CRUD operations on resources and their associations for you, and you can customize how these operations
 are carried out, allowing for infinite possibilities while focusing on work that matters to you, instead of writing repetitive code for each action of each resource in your application.
 
-For now, the only format that is supported by Caprese is the [JSON API schema](http://jsonapi.org/format/). In the future, Caprese will support a more straightforward (but less powerful) JSON format as well, for simpler use cases.
+For now, the only format that is supported by Caprese is the [JSON API schema.](http://jsonapi.org/format/)
+
+[![Coverage Status](https://coveralls.io/repos/github/nicklandgrebe/caprese/badge.svg)](https://coveralls.io/github/nicklandgrebe/caprese)
 
 ## Installation
 
