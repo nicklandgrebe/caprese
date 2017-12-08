@@ -36,7 +36,7 @@ describe 'Requests with Callbacks', type: :request do
       API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
     end
 
-    before { post "/api/v1/#{type}/", { data: data } }
+    before { post "/api/v1/#{type}/", params: { data: data } }
 
     subject(:data) do
       output = { type: type }
@@ -70,7 +70,7 @@ describe 'Requests with Callbacks', type: :request do
       API::V1::CommentsController.instance_variable_set('@after_create_callbacks', [])
     end
 
-    before { post "/api/v1/#{type}/", { data: data } }
+    before { post "/api/v1/#{type}/", params: { data: data } }
 
     subject(:data) do
       output = { type: type }
@@ -132,7 +132,7 @@ describe 'Requests with Callbacks', type: :request do
         API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
       end
 
-      before { post "/api/v1/#{type}/", { data: data } }
+      before { post "/api/v1/#{type}/", params: { data: data } }
 
       subject(:data) do
         output = { type: type }

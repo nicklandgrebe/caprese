@@ -40,7 +40,7 @@ module Caprese
       fail_on_type_mismatch(data_params[:type])
 
       record = queried_record_scope.build
-      assign_changes_from_document(record, data_params, permitted_params_for(:create))
+      assign_changes_from_document(record, data_params.to_unsafe_h, permitted_params_for(:create))
 
       execute_after_initialize_callbacks(record)
 
@@ -59,7 +59,7 @@ module Caprese
       render(
         json: record,
         status: :created,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -71,7 +71,7 @@ module Caprese
     def update
       fail_on_type_mismatch(data_params[:type])
 
-      assign_changes_from_document(queried_record, data_params, permitted_params_for(:update))
+      assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:update))
 
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
@@ -85,7 +85,7 @@ module Caprese
 
       render(
         json: queried_record,
-        fields: query_params[:fields],
+        fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
       )
     end
@@ -107,10 +107,23 @@ module Caprese
     private
 
     # Requires the data param standard to JSON API
+    # @note If data is an array, RequestDocumentInvalidError will be raised
     #
-    # @return [StrongParameters] the strong params in the `data` object param
+    # @return [StrongParameters] the strong params in the `data` param
     def data_params
-      params.require('data')
+      if @data.blank?
+        @data = params.require('data')
+        raise RequestDocumentInvalidError.new(field: :base) if @data.is_a?(Array)
+      end
+
+      @data
+    end
+
+    # Requires the data param, with only resource identifiers permitted
+    #
+    # @return [StrongParameters] the resource identifiers in the `data` param
+    def resource_identifier_data_params
+      params.permit(data: [:id, :type]).require('data')
     end
 
     # An array of symbols stating params that are permitted for a #create action
@@ -293,7 +306,9 @@ module Caprese
     # @param [Hash] aliases_document the aliases document reflects usage of aliases in the data document
     # @return [Hash] the object of attributes to assign to the record
     def extract_attributes_from_document(record, data, permitted_params, aliases_document)
-      data.permit(*permitted_params).each_with_object({}) do |(attribute_name, val), attributes|
+      data
+      .slice(*permitted_params)
+      .each_with_object({}) do |(attribute_name, val), attributes|
         attribute_name = attribute_name.to_sym
         actual_attribute_name = actual_field(attribute_name, record.class)
 
@@ -421,7 +436,7 @@ module Caprese
     # This methods persists the collection relation(s) pushed onto the record's association target(s)
     def persist_collection_relationships(record)
       record.class.reflect_on_all_associations
-      .select { |ref| ref.collection? && !ref.through_reflection && record.association(ref.name).any? }
+      .select { |ref| ref.collection? && !ref.through_reflection && record.association(ref.name).target.any? }
       .map do |ref|
         [
           ref.has_inverse? ? ref.inverse_of.name : ref.options[:as],

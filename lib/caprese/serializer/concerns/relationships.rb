@@ -78,8 +78,6 @@ module Caprese
         # @param [String] reflection_name the name of the relationship
         # @return [Block] a block to build links for the relationship
         def build_association_block(reflection_name)
-          primary_key = Caprese.config.resource_primary_key
-
           reflection_name = reflection_name.to_sym
 
           Proc.new do |serializer|
@@ -88,7 +86,7 @@ module Caprese
               if serializer.url_helpers.respond_to? url
                 serializer.url_helpers.send(
                   url,
-                  id: object.read_attribute(primary_key),
+                  id: object.read_attribute(Caprese.config.resource_primary_key),
                   relationship: reflection_name,
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )
@@ -100,7 +98,7 @@ module Caprese
               if serializer.url_helpers.respond_to? url
                 serializer.url_helpers.send(
                   url,
-                  id: object.read_attribute(primary_key),
+                  id: object.read_attribute(Caprese.config.resource_primary_key),
                   relationship: reflection_name,
                   host: serializer.class.send(:caprese_default_url_options_host)
                 )

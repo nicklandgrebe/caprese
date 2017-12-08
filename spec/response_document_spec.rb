@@ -55,8 +55,6 @@ describe 'Resource document structure', type: :request do
   end
 
   describe 'links' do
-    include Rails.application.routes.url_helpers
-
     before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
 
     before { get "/api/v1/#{resource_path}/#{resource.id}" }
@@ -65,7 +63,15 @@ describe 'Resource document structure', type: :request do
     let(:resource_path) { resource.class.name.underscore.pluralize }
 
     it 'includes self link' do
-      expect(json['data']['links']['self']).to eq(api_v1_comment_url(resource))
+      expect(json['data']['links']['self']).to eq(Rails.application.routes.url_helpers.api_v1_comment_url(resource))
+    end
+
+    context 'when overriden self link' do
+      subject(:resource) { User.first }
+
+      it 'overrides self link' do
+        expect(json['data']['links']['self']).to eq('override')
+      end
     end
 
     context 'when overriden self link' do
@@ -83,7 +89,9 @@ describe 'Resource document structure', type: :request do
       let(:resource_path) { 'attachments' }
 
       it 'uses the parent resource model link' do
-        expect(json['data']['links']['self']).to eq(api_v1_attachment_url(resource))
+        expect(json['data']['links']['self']).to(
+          eq(Rails.application.routes.url_helpers.api_v1_attachment_url(resource))
+        )
       end
     end
   end
@@ -219,7 +227,7 @@ describe 'Resource document structure', type: :request do
         end
       end
 
-      before { post '/api/v1/comments', { data: { type: 'comments' } } }
+      before { post '/api/v1/comments', params: { data: { type: 'comments' } } }
 
       it 'indicates that the alias is an attribute' do
         expect(json['errors'][0]['source']['pointer']).to eq('/data/attributes/not_attribute')
@@ -292,7 +300,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
+        before { post '/api/v1/comments', params: { data: data } }
         let(:content) { 'mah awesome body' }
 
         let(:data) do
@@ -318,7 +326,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'patch' do
-        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        before { patch "/api/v1/comments/#{existing_resource.id}", params: { data: data } }
         let(:existing_resource) { create :comment }
         let(:content) { 'mah awesome body!' }
 
@@ -366,8 +374,6 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'get' do
-        include Rails.application.routes.url_helpers
-
         before { Rails.application.routes.default_url_options[:host] = 'http://www.example.com' }
 
         before { get "/api/v1/comments#{query_str}" }
@@ -379,7 +385,7 @@ describe 'Resource document structure', type: :request do
 
         it 'aliases relationship links' do
           expect(json['data'][0]['relationships']['article']['links']['self']).to eq(
-            relationship_definition_api_v1_comment_url(
+            Rails.application.routes.url_helpers.relationship_definition_api_v1_comment_url(
               comments.first,
               relationship: 'article'
             )
@@ -396,7 +402,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
+        before { post '/api/v1/comments', params: { data: data } }
         let(:article) { create :post }
 
         let(:data) do
@@ -422,7 +428,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'patch' do
-        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        before { patch "/api/v1/comments/#{existing_resource.id}", params: { data: data } }
         let(:existing_resource) { create :comment }
         let(:article) { create :post }
 
@@ -465,7 +471,7 @@ describe 'Resource document structure', type: :request do
         end
 
         describe 'update definition' do
-          before { patch "/api/v1/comments/#{comment.id}/relationships/article", { data: data } }
+          before { patch "/api/v1/comments/#{comment.id}/relationships/article", params: { data: data } }
 
           let(:data) do
             [
@@ -535,7 +541,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
+        before { post '/api/v1/comments', params: { data: data } }
 
         let(:name) { 'A valid name' }
 
@@ -586,7 +592,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'patch' do
-        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        before { patch "/api/v1/comments/#{existing_resource.id}", params: { data: data } }
         let(:existing_resource) { create :comment }
 
         let(:name) { 'A valid name' }
@@ -713,7 +719,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
+        before { post '/api/v1/comments', params: { data: data } }
         
         let(:name) { 'A valid name' }
 
@@ -764,7 +770,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'patch' do
-        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        before { patch "/api/v1/comments/#{existing_resource.id}", params: { data: data } }
         let(:existing_resource) { create :comment }
 
         let(:name) { 'A valid name' }
@@ -900,7 +906,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post '/api/v1/comments', { data: data } }
+        before { post '/api/v1/comments', params: { data: data } }
 
         let(:submitter_id) { create(:user).id.to_s }
 
@@ -951,7 +957,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'patch' do
-        before { patch "/api/v1/comments/#{existing_resource.id}", { data: data } }
+        before { patch "/api/v1/comments/#{existing_resource.id}", params: { data: data } }
         let(:existing_resource) { create :comment }
 
         let(:submitter_id) { create(:user).id.to_s }
@@ -1048,7 +1054,7 @@ describe 'Resource document structure', type: :request do
       end
 
       describe 'post' do
-        before { post "/api/v1/#{type}", { data: data } }
+        before { post "/api/v1/#{type}", params: { data: data } }
 
         let(:type) { 'comments' }
 
@@ -1120,7 +1126,7 @@ describe 'Resource document structure', type: :request do
         end
 
         describe 'update definition' do
-          before { patch "/api/v1/posts/#{my_post.id}/relationships/comments", { data: data } }
+          before { patch "/api/v1/posts/#{my_post.id}/relationships/comments", params: { data: data } }
 
           let(:data) do
             [

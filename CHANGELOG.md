@@ -179,3 +179,8 @@
   * Fields are now assigned in a specific order: attributes, singular relationships, collection relationships
 * Fix issue regarding `:base` field titles interpolated into error messages
 * Add more detailed error responses to `update_relationship_definition` endpoints
+
+# Master
+
+* Switches to Rails 5, drops support for Rails 4
+* Protects against arrays being sent as data for create and update actions

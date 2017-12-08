@@ -11,7 +11,7 @@ describe 'Requests that persist data', type: :request do
 
   describe '#create' do
     before do
-      post "/api/v1/#{type}/", { data: data }
+      post "/api/v1/#{type}/", params: { data: data }
     end
 
     subject(:type) { 'comments' }
@@ -48,6 +48,18 @@ describe 'Requests that persist data', type: :request do
     it 'assigns relationships' do
       expect(Comment.last.post).to eq(resource)
       expect(Comment.last.user).to eq(user)
+    end
+
+    context 'when data is an array' do
+      subject(:data) { [{ id: '2', type: 'posts' }] }
+
+      it 'responds with 422' do
+        expect(response.status).to eq(422)
+      end
+
+      it 'responds with error source pointer to data' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data')
+      end
     end
 
     context 'when has_many field' do
@@ -260,7 +272,7 @@ describe 'Requests that persist data', type: :request do
   end
 
   describe '#update' do
-    before { put "/api/v1/#{type}/#{existing_resource.id}", { data: data } }
+    before { put "/api/v1/#{type}/#{existing_resource.id}", params: { data: data } }
 
     subject(:type) { 'comments' }
     subject(:existing_resource) { create(:comment, user: user, post: resource) }
@@ -270,6 +282,18 @@ describe 'Requests that persist data', type: :request do
       output = { type: type }
       output.merge!(attributes: attributes)
       output.merge!(relationships: relationships)
+    end
+
+    context 'when data is an array' do
+      subject(:data) { [{ id: '2', type: 'posts' }] }
+
+      it 'responds with 422' do
+        expect(response.status).to eq(422)
+      end
+
+      it 'responds with error source pointer to data' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data')
+      end
     end
 
     context 'valid' do
