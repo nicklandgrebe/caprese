@@ -107,10 +107,16 @@ module Caprese
     private
 
     # Requires the data param standard to JSON API
+    # @note If data is an array, RequestDocumentInvalidError will be raised
     #
     # @return [StrongParameters] the strong params in the `data` param
     def data_params
-      params.require('data')
+      if @data.blank?
+        @data = params.require('data')
+        raise RequestDocumentInvalidError.new(field: :base) if @data.is_a?(Array)
+      end
+
+      @data
     end
 
     # Requires the data param, with only resource identifiers permitted

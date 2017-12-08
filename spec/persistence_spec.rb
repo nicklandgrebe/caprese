@@ -50,6 +50,18 @@ describe 'Requests that persist data', type: :request do
       expect(Comment.last.user).to eq(user)
     end
 
+    context 'when data is an array' do
+      subject(:data) { [{ id: '2', type: 'posts' }] }
+
+      it 'responds with 422' do
+        expect(response.status).to eq(422)
+      end
+
+      it 'responds with error source pointer to data' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data')
+      end
+    end
+
     context 'when has_many field' do
       subject(:type) { 'posts' }
       let!(:comments) { create_list :comment, 2 }
@@ -270,6 +282,18 @@ describe 'Requests that persist data', type: :request do
       output = { type: type }
       output.merge!(attributes: attributes)
       output.merge!(relationships: relationships)
+    end
+
+    context 'when data is an array' do
+      subject(:data) { [{ id: '2', type: 'posts' }] }
+
+      it 'responds with 422' do
+        expect(response.status).to eq(422)
+      end
+
+      it 'responds with error source pointer to data' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data')
+      end
     end
 
     context 'valid' do
