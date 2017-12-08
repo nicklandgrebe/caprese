@@ -362,7 +362,7 @@ Let's say your sandwich API can create sandwiches for users from 5 different res
 
 By default, when `SandwichesController` looks for `condiments`, it uses `Condiment.all` as a starting point. This means that your user making a request could definitely request a condiment that does not exist at the restaurant they're ordering from. To fix this, we use a helper called `record_scope`:
 
-```
+```ruby
 class SandwichesController < ApplicationController
   def record_scope(type)
     case type
@@ -381,7 +381,7 @@ Let's say you've created endpoints for `restaurants` as well, using the steps ou
 
 What if, instead, you wanted this endpoint to only return sandwiches that the restaurant had created in the last week alone. Simple, use `relationship_scope`:
 
-```
+```ruby
 class RestaurantsController < ApplicationController
   def relationship_scope(name, scope)
     case name
@@ -412,7 +412,7 @@ after_destroy
 
 To implement one of these callbacks, simply define a callback method and add it to a callback list:
 
-```
+```ruby
 class SandwichesController < ApplicationController
   before_create :cut_bread
   before_save :calculate_price_from_special_condiments
@@ -447,7 +447,7 @@ Errors in Caprese come in two forms: model errors, and controller errors.
 
 Model errors are created when a record does not pass validation. [Validators are defined in the model using standard Rails.](http://guides.rubyonrails.org/active_record_validations.html) For example:
 
-```
+```ruby
 class Sandwich < ApplicationRecord
   validates_presence_of :size
   validates_length_of :condiments, minimum: 2
@@ -515,7 +515,7 @@ Caprese looks for translations in the following order, and if none of them are d
 
 Caprese provides a method to create controller errors that can have their own translation scope. If at any point in your control flow, say in a callback, you want to immediately halt the request and respond with an error message, you can do the following:
 
-```
+```ruby
 fail error(
   field: :filter,
   code: :invalid,
@@ -547,7 +547,7 @@ Caprese will search for controller errors in the following order:
 
 ### Configuration
 
-```
+```ruby
 # Defines the primary key to use when querying records
 config.resource_primary_key ||= :id
 
