@@ -170,7 +170,7 @@
 
 * Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
 
-# Master
+## 0.5.0
 
 * Add `relationship_scope(relationship_name, scope) => scope` method for all relationships in serializers, allowing override for custom scoping
 * Refactor `assign_record_attributes` to `assign_changes_from_document`, which splits into multiple modular methods that handle relationship data errors with more source pointer detail
