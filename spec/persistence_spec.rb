@@ -109,13 +109,35 @@ describe 'Requests that persist data', type: :request do
     end
 
     context 'when relationships are invalid' do
-      context 'id' do
-        subject(:attributes) do
-          {
-            body: 'unique_body'
-          }
+      context 'data' do
+        context 'missing' do
+          subject(:relationships) do
+            {
+              post: { type: 'posts', id: resource.id },
+              user: { data: { type: 'users', id: user.id } }
+            }
+          end
+
+          it 'fails with error pointer to the relationship /data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data')
+          end
         end
 
+        context 'plurality mismatch' do
+          subject(:relationships) do
+            {
+              post: { data: [{type: 'posts', id: resource.id }] },
+              user: { data: { type: 'users', id: user.id } }
+            }
+          end
+
+          it 'fails with error pointer to the relationship /data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data')
+          end
+        end
+      end
+
+      context 'id' do
         subject(:relationships) do
           {
             post: { data: { type: 'posts', id: resource.id + 10000 } },
@@ -129,12 +151,6 @@ describe 'Requests that persist data', type: :request do
       end
 
       context 'type' do
-        subject(:attributes) do
-          {
-            body: 'unique_body'
-          }
-        end
-
         subject(:relationships) do
           {
             post: { data: { id: resource.id } },
@@ -244,10 +260,10 @@ describe 'Requests that persist data', type: :request do
   end
 
   describe '#update' do
-    before { put "/api/v1/#{type}/#{comment.id}", params: { data: data } }
+    before { put "/api/v1/#{type}/#{existing_resource.id}", params: { data: data } }
 
     subject(:type) { 'comments' }
-    subject(:comment) { create(:comment, user: user, post: resource) }
+    subject(:existing_resource) { create(:comment, user: user, post: resource) }
     subject(:attributes) { {} }
     subject(:relationships) { {} }
     subject(:data) do
@@ -283,7 +299,7 @@ describe 'Requests that persist data', type: :request do
         end
 
         context 'setting nil' do
-          subject(:comment) { create(:comment, :with_rating, user: user, post: resource) }
+          subject(:existing_resource) { create(:comment, :with_rating, user: user, post: resource) }
 
           subject(:relationships) do
             {
@@ -332,6 +348,56 @@ describe 'Requests that persist data', type: :request do
 
         it 'fails to create the record with errors' do
           expect(json['errors'][0]['code']).to eq('not_found')
+        end
+      end
+    end
+
+    context 'autosaving relationship' do
+      let(:type) { 'posts' }
+      let(:existing_resource) do
+        if @added_comments.blank?
+          create_list(:comment, 2, post: resource)
+          @added_comments = true
+        end
+
+        resource
+      end
+
+      subject(:relationships) do
+        {
+          comments: {
+            data: [
+              {
+                type: 'comments',
+                attributes: {
+                  body: body
+                }
+              }
+            ]
+          }
+        }
+      end
+
+      let(:body) { 'Unique body!' }
+
+      it 'updates relationships' do
+        expect(existing_resource.comments.length).to eq(1)
+        expect(existing_resource.comments.last.body).to eq(body)
+      end
+
+      context 'when invalid' do
+        let(:body) { '' }
+
+        it 'responds with 422' do
+          expect(response.status).to eq(422)
+        end
+
+        it 'responds with error pointer to relationship field' do
+          expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/comments/data/attributes/body')
+        end
+
+        it 'does not update relationship' do
+          expect(existing_resource.comments.length).to eq(2)
         end
       end
     end

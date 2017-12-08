@@ -12,10 +12,7 @@ module Caprese
       # @note The only instance this may be called, at least in JSON API settings, is a
       #   missing params['data'] param
       rescue_from ActionController::ParameterMissing do |e|
-        rescue_with_handler Error.new(
-          field: e.param,
-          code: :blank
-        )
+        rescue_with_handler RequestDocumentInvalidError.new(field: :base)
       end
 
       rescue_from ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved do |e|
@@ -43,7 +40,7 @@ module Caprese
       fail_on_type_mismatch(data_params[:type])
 
       record = queried_record_scope.build
-      assign_record_attributes(record, permitted_params_for(:create), data_params)
+      assign_changes_from_document(record, data_params.to_unsafe_h, permitted_params_for(:create))
 
       execute_after_initialize_callbacks(record)
 
@@ -74,7 +71,7 @@ module Caprese
     def update
       fail_on_type_mismatch(data_params[:type])
 
-      assign_record_attributes(queried_record, permitted_params_for(:update), data_params)
+      assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:update))
 
       execute_before_update_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)
@@ -111,9 +108,16 @@ module Caprese
 
     # Requires the data param standard to JSON API
     #
-    # @return [StrongParameters] the strong params in the `data` object param
+    # @return [StrongParameters] the strong params in the `data` param
     def data_params
       params.require('data')
+    end
+
+    # Requires the data param, with only resource identifiers permitted
+    #
+    # @return [StrongParameters] the resource identifiers in the `data` param
+    def resource_identifier_data_params
+      params.permit(data: [:id, :type]).require('data')
     end
 
     # An array of symbols stating params that are permitted for a #create action
@@ -157,7 +161,8 @@ module Caprese
     # @param [Array] params the params to search for the key in
     # @return [Array,Nil] the nested params for a given key
     def nested_params_for(key, params)
-      params.detect { |p| p.is_a?(Hash) }.try(:[], key.to_sym)
+      key = key.to_sym
+      params.detect { |p| p.is_a?(Hash) && p.has_key?(key) }.try(:[], key)
     end
 
     # Flattens an array of the top level keys for a given set of params
@@ -192,7 +197,7 @@ module Caprese
     #   }
     #   create_params => [:price]
     #
-    #   assign_record_attributes(record, create_params, params)
+    #   assign_changes_from_document(record, params, create_params)
     #     => { price: '...', product: Product<@token='asj38k'> }
     #
     # @example
@@ -215,129 +220,182 @@ module Caprese
     #
     #   create_params => [:price, order_items: [:title, :amount, :tax]]
     #
-    #   assign_record_attributes(record, create_params, params) # => {
+    #   assign_changes_from_document(record, params, create_params) # => {
     #     price: '...',
     #     order_items: [OrderItem<@token=nil,@title='An order item',@amount=5.0,@tax=0.0>]
     #   }
     #
     # @param [ActiveRecord::Base] record the record to build attribute into
-    # @param [Array] permitted_params the permitted params for the action
     # @param [Parameters] data the data sent to the server to construct and assign to the record
+    # @param [Array] permitted_params the permitted params for the action
     # @option [String] parent_relationship_name the parent relationship assigning these attributes to the record, used to determine
     #   engaged aliases @see concerns/aliasing
-    def assign_record_attributes(record, permitted_params, data, parent_relationship_name: nil)
+    def assign_changes_from_document(record, data, permitted_params = [], parent_relationship_name: nil)
       # TODO: Make safe by enforcing that only a single alias/unalias can be engaged at once
-      engaged_field_aliases_object = parent_relationship_name ? (engaged_field_aliases[parent_relationship_name] ||= {}) : engaged_field_aliases
+      aliases_document =
+        if parent_relationship_name
+          engaged_field_aliases[parent_relationship_name] ||= {}
+        else
+          engaged_field_aliases
+        end
 
-      attributes = data[:attributes].try(:permit, *permitted_params).try(:to_h).try(:inject, {}) do |out, (attribute_name, val)|
+      if data[:attributes]
+        assign_fields_to_record record, extract_attributes_from_document(
+          record,
+          data[:attributes],
+          permitted_params,
+          aliases_document
+        )
+      end
+
+      if data[:relationships]
+        collection_relationships, singular_relationships =
+          flattened_keys_for(permitted_params)
+          .select { |k|
+            begin
+              record.association(actual_field(k, record.class))
+            rescue ActiveRecord::AssociationNotFoundError
+              false
+            end
+          }
+          .partition { |k| record.association(actual_field(k, record.class)).reflection.collection? }
+          .map { |s|
+            s.map { |r| permitted_params.include?(r) ? r : { r => nested_params_for(r, permitted_params) } }
+          }
+
+        assign_fields_to_record record, extract_relationships_from_document(
+          record,
+          data[:relationships],
+          singular_relationships,
+          aliases_document
+        )
+
+        assign_fields_to_record record, extract_relationships_from_document(
+          record,
+          data[:relationships],
+          collection_relationships,
+          aliases_document
+        )
+      end
+    end
+
+    # Assigns fields to the record conditionally based on whether or not assign_attributes is available
+    # @note Allows non-ActiveRecord models to be handled
+    #
+    # @param [ActiveRecord::Base,Struct] record the record to assign fields to
+    # @param [Hash] fields the fields to assign to the record
+    def assign_fields_to_record(record, fields)
+      if record.respond_to?(:assign_attributes)
+        record.assign_attributes(fields)
+      else
+        fields.each { |k, v| record.send("#{k}=", v) }
+      end
+    end
+
+    # Builds an object of attributes to assign to a record, based on a document
+    #
+    # @param [ActiveRecord] record the record corresponding to the data document
+    # @param [Parameters] data the document to extract attributes from
+    # @param [Array<Symbol,Hash>] permitted_params the permitted attributes that can be assigned through this controller
+    # @param [Hash] aliases_document the aliases document reflects usage of aliases in the data document
+    # @return [Hash] the object of attributes to assign to the record
+    def extract_attributes_from_document(record, data, permitted_params, aliases_document)
+      data
+      .slice(*permitted_params)
+      .each_with_object({}) do |(attribute_name, val), attributes|
         attribute_name = attribute_name.to_sym
         actual_attribute_name = actual_field(attribute_name, record.class)
 
         if attribute_name != actual_attribute_name
-          engaged_field_aliases_object[attribute_name] = true
+          aliases_document[attribute_name] = true
         end
 
-        out[actual_attribute_name] = val
-        out
-      end || {}
+        attributes[actual_attribute_name] = val
+      end
+    end
 
-      data[:relationships]
-      .try(:slice, *flattened_keys_for(permitted_params))
-      .try(:each) do |relationship_name, relationship_data|
+    # Builds an object of relationships to assign to a record, based on a document
+    #
+    # @param [ActiveRecord] record the record corresponding to the data document
+    # @param [Parameters] data the document to extract relationships from
+    # @param [Array<Symbol,Hash>] permitted_relationships the permitted relationships that can be assigned through this controller
+    # @param [Hash] aliases_document the aliases document reflects usage of aliases in the data document
+    # @return [Hash] the object of relationships to assign to the record
+    def extract_relationships_from_document(record, data, permitted_relationships, aliases_document)
+      data
+      .slice(*flattened_keys_for(permitted_relationships))
+      .each_with_object({}) do |(relationship_name, relationship_data), relationships|
         relationship_name = relationship_name.to_sym
         actual_relationship_name = actual_field(relationship_name, record.class)
 
         if relationship_name != actual_relationship_name
-          engaged_field_aliases_object[relationship_name] = {}
+          aliases_document[relationship_name] = {}
         end
 
-        # TODO: Add checkme for relationship_name to ensure that format is correct (not Array when actually Record, vice versa)
-        #   No relationship exists as well
+        begin
+          raise RequestDocumentInvalidError.new(field: :base) unless relationship_data.has_key?(:data)
 
-        attributes[actual_relationship_name] = records_for_relationship(
-          record,
-          nested_params_for(relationship_name, permitted_params),
-          relationship_name,
-          relationship_data
-        )
-      end
+          relationship_result = records_for_relationship(
+            record,
+            nested_params_for(relationship_name, permitted_relationships),
+            relationship_name,
+            relationship_data[:data]
+          )
 
-      if record.respond_to?(:assign_attributes)
-        record.assign_attributes(attributes)
-      else
-        attributes.each { |k, v| record.send("#{k}=", v) }
+          reflection = record.association(actual_relationship_name).reflection
+          if (reflection.collection? && !relationship_result.is_a?(Array)) ||
+            (!reflection.collection? && relationship_result.is_a?(Array))
+
+            raise RequestDocumentInvalidError.new(field: :base)
+          end
+
+          if record.persisted? && reflection.collection? &&
+            (inverse_reflection = record.class.reflect_on_association(actual_relationship_name).inverse_of)
+
+            relationship_result.each { |r| r.send("#{inverse_reflection.name}=", record) }
+            invalid_results = relationship_result.reject(&:valid?)
+            raise RecordInvalidError.new(invalid_results.first) if invalid_results.any?
+          end
+
+          relationships[actual_relationship_name] = relationship_result
+        rescue Caprese::RecordNotFoundError => e
+          record.errors.add(relationship_name, :not_found, t: e.t.slice(:value))
+        rescue RecordInvalidError => e
+          propagate_errors_to_parent(
+            record,
+            relationship_name,
+            e.record.errors.to_a
+          )
+        rescue RequestDocumentInvalidError => e
+          propagate_errors_to_parent(
+            record,
+            relationship_name,
+            [e]
+          )
+        end
       end
     end
 
     # Gets all the records for a relationship given a relationship data definition
     #
-    # @param [ActiveRecord::Base] owner the owner of the relationship
+    # @param [ActiveRecord] owner the owner of the relationship
     # @param [Array] permitted_params the permitted params for the
     # @param [String] relationship_name the name of the relationship to get records for
     # @param [Hash,Array<Hash>] relationship_data the resource identifier data to use to find/build records
-    # @return [ActiveRecord::Base,Array<ActiveRecord::Base>] the record(s) for the relationship
+    # @return [ActiveRecord,Array<ActiveRecord>] the record(s) for the relationship
     def records_for_relationship(owner, permitted_params, relationship_name, relationship_data)
-      if relationship_data[:data].is_a?(Array)
-        relationship_data[:data].map do |relationship_data_item|
-          ref = record_for_relationship(owner, relationship_name, relationship_data_item)
+      result = Array.wrap(relationship_data).map do |relationship_data_item|
+        ref = record_for_resource_identifier(relationship_data_item)
 
-          if ref && contains_constructable_data?(relationship_data_item)
-            assign_record_attributes(ref, permitted_params, relationship_data_item, parent_relationship_name: relationship_name)
-          end
-
-          ref
-        end
-      elsif relationship_data[:data].present?
-        ref = record_for_relationship(owner, relationship_name, relationship_data[:data])
-
-        if ref && contains_constructable_data?(relationship_data[:data])
-          assign_record_attributes(ref, permitted_params, relationship_data[:data], parent_relationship_name: relationship_name)
+        if ref && contains_constructable_data?(relationship_data_item)
+          assign_changes_from_document(ref, relationship_data_item, permitted_params, parent_relationship_name: relationship_name)
+          propagate_errors_to_parent(owner, relationship_name, ref.errors.to_a) if ref.errors.any?
         end
 
         ref
-      elsif !relationship_data.has_key?(:data)
-        raise Error.new(
-          field: "/data/relationships/#{relationship_name}/data",
-          code: :blank
-        )
       end
-    end
 
-    # Given a resource identifier, finds or builds a resource for a relationship
-    #
-    # @param [ActiveRecord::Base] owner the owner of the relationship record
-    # @param [String] relationship_name the name of the relationship
-    # @param [Hash] resource_identifier the resource identifier for the resource
-    # @return [ActiveRecord::Base] the found or built resource for the relationship
-    def record_for_relationship(owner, relationship_name, resource_identifier)
-      if resource_identifier[:type]
-        # { type: '...', id: '...' }
-        if (id = resource_identifier[:id])
-          begin
-            get_record!(
-              resource_identifier[:type],
-              Caprese.config.resource_primary_key,
-              id
-            )
-          rescue Caprese::RecordNotFoundError => e
-            owner.errors.add(relationship_name, :not_found, t: { value: id })
-            nil
-          end
-
-        # { type: '...', attributes: { ... } }
-        elsif contains_constructable_data?(resource_identifier)
-          record_scope(resource_identifier[:type].to_sym).build
-
-        # { type: '...' }
-        else
-          owner.errors.add(relationship_name)
-          nil
-        end
-      else
-        # { id: '...' } && { attributes: { ... } }
-        owner.errors.add("#{relationship_name}.type")
-        nil
-      end
+      relationship_data.is_a?(Array) && result || result.first
     end
 
     # Indicates whether or not :attributes or :relationships keys are in a resource identifier,
@@ -347,6 +405,21 @@ module Caprese
     # @return [Boolean] whether or not the resource identifier contains constructable data
     def contains_constructable_data?(resource_identifier)
       [:attributes, :relationships].any? { |k| resource_identifier.key?(k) }
+    end
+
+    # Propagates errors to parent with nested field name
+    #
+    # @param [ActiveRecord] parent the parent to propagate errors to
+    # @param [String] relationship_name the name to use when nesting the errors
+    # @param [Array<Error>] errors the errors to propagate
+    def propagate_errors_to_parent(parent, relationship_name, errors)
+      errors.each do |error|
+        parent.errors.add(
+          error.field == :base ? relationship_name : "#{relationship_name}.#{error.field}",
+          error.code,
+          t: error.t.except(:field, :field_title)
+        )
+      end
     end
 
     # Called in create, after the record is saved. When creating a new record, and assigning to it

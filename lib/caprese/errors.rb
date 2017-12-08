@@ -1,6 +1,21 @@
 require 'caprese/error'
 
 module Caprese
+  # Thrown when a request document contained an error that made it unprocessable
+  #
+  # @param [Symbol] field the field of the document that contained the error
+  # @param [Symbol] code the code for the error
+  # @param [Hash] t the translation params for the error
+  class RequestDocumentInvalidError < Error
+    attr_reader :document
+
+    def initialize(field: nil, code: :invalid, t: {})
+      super
+      @document = true
+      @header = { status: :unprocessable_entity }
+    end
+  end
+
   # Thrown when a record was attempted to be persisted and was invalidated
   #
   # @param [ActiveRecord::Base] record the record that is invalid

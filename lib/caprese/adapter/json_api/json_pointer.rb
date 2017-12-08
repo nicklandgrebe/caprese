@@ -9,7 +9,8 @@ module Caprese
           relationship_attribute: '/data/relationships/%s'.freeze,
           relationship_base: '/data/relationships/%s/data'.freeze,
           relationship_primary_data: '/data/relationships/%s/data/%s'.freeze,
-          primary_data: '/data/%s'.freeze
+          primary_data: '/data/%s'.freeze,
+          base: '/data'.freeze
         }.freeze
 
         # Iterates over the field of an error and converts it to a pointer in JSON API format
@@ -50,7 +51,7 @@ module Caprese
                 end
             end
           else
-            format(POINTERS[pointer_type], *[value].flatten)
+            format(POINTERS[pointer_type], *Array.wrap(value))
           end
         end
       end

@@ -18,6 +18,17 @@ module Caprese
           ]
         end
 
+        def self.document_errors(error_serializer, options)
+          error_attributes = error_serializer.as_json
+          [
+            {
+              code: error_attributes[:code],
+              detail: error_attributes[:message],
+              source: error_source(:pointer, nil, error_attributes[:field])
+            }
+          ]
+        end
+
         # Builds a JSON API Errors Object
         # {http://jsonapi.org/format/#errors JSON API Errors}
         #
@@ -89,12 +100,16 @@ module Caprese
         #       parameter: 'pres'
         #     }
         #   end
-        RESERVED_ATTRIBUTES = %w(type)
+        RESERVED_ATTRIBUTES = %w(id type)
         def self.error_source(source_type, record, attribute_name)
           case source_type
           when :pointer
+            if attribute_name == :base
+              {
+                pointer: JsonApi::JsonPointer.new(:base, record, attribute_name)
+              }
             # [type ...] and other primary data variables
-            if RESERVED_ATTRIBUTES.include?(attribute_name.to_s)
+            elsif RESERVED_ATTRIBUTES.include?(attribute_name.to_s)
               {
                 pointer: JsonApi::JsonPointer.new(:primary_data, record, attribute_name)
               }

@@ -169,3 +169,13 @@
 ## 0.4.1
 
 * Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
+
+# Master
+
+* Add `relationship_scope(relationship_name, scope) => scope` method for all relationships in serializers, allowing override for custom scoping
+* Refactor `assign_record_attributes` to `assign_changes_from_document`, which splits into multiple modular methods that handle relationship data errors with more source pointer detail
+  * Adds `ResourceDocumentInvalidError` for errors pertaining to the document instead of record assignment (`RecordInvalidError`)
+  * Allows `PATCH` requests to primary endpoints that update autosaving collection relationships  to propagate the nested errors on attributes/relationships up to the primary data so error source pointers are just as detailed as they would be under `POST` requests already
+  * Fields are now assigned in a specific order: attributes, singular relationships, collection relationships
+* Fix issue regarding `:base` field titles interpolated into error messages
+* Add more detailed error responses to `update_relationship_definition` endpoints

@@ -123,6 +123,38 @@ describe 'Managing relationships of resources', type: :request do
           expect(resource.comments.count).to eq(1)
           expect(resource.comments.first).to eq(relationship_resource)
         end
+
+        context 'relationship resource cannot be found' do
+          subject(:data) { { id: relationship_resource.id + 1000, type: 'comments' } }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data')
+          end
+
+          it 'responds with error code not_found' do
+            expect(json['errors'][0]['code']).to eq('not_found')
+          end
+        end
+
+        context 'relationship resource has no type' do
+          subject(:data) { { id: relationship_resource.id } }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data/type')
+          end
+
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
+          end
+        end
       end
 
       context 'when clearing relationship' do
@@ -149,6 +181,22 @@ describe 'Managing relationships of resources', type: :request do
           expect(resource.comments.count).to eq(original_comment_count + 1)
           expect(resource.comments.last).to eq(relationship_resource)
         end
+
+        context 'when data nil' do
+          let(:data) { nil }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data')
+          end
+
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
+          end
+        end
       end
 
       context 'when deleting from relationship' do
@@ -161,6 +209,22 @@ describe 'Managing relationships of resources', type: :request do
 
         it 'deletes from the relationship' do
           expect(resource.comments.count).to eq(original_comment_count - 1)
+        end
+
+        context 'when data nil' do
+          let(:data) { nil }
+
+          it 'responds with 422' do
+            expect(response.status).to eq(422)
+          end
+
+          it 'responds with error source pointer to data' do
+            expect(json['errors'][0]['source']['pointer']).to eq('/data')
+          end
+
+          it 'responds with error code invalid' do
+            expect(json['errors'][0]['code']).to eq('invalid')
+          end
         end
       end
     end
