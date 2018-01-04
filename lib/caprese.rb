@@ -15,6 +15,10 @@ module Caprese
   # Defines the ActiveModelSerializers adapter to use when serializing
   config.adapter ||= :json_api
 
+  # Defines the full Content-Type header to respond with
+  # @note Caprese accepts both application/json and application/vnd.api+json
+  config.content_type = 'application/vnd.api+json; charset=utf-8'
+
   # Define URL options for use in UrlHelpers
   config.default_url_options ||= {}
 
