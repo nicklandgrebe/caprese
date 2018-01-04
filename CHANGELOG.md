@@ -179,3 +179,7 @@
   * Fields are now assigned in a specific order: attributes, singular relationships, collection relationships
 * Fix issue regarding `:base` field titles interpolated into error messages
 * Add more detailed error responses to `update_relationship_definition` endpoints
+
+## 0.6.0
+
+* Accept and respond with `Content-Type: application/vnd.api+json`
