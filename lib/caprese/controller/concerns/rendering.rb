@@ -28,6 +28,8 @@ module Caprese
         end
       end
 
+      headers['Content-Type'] = Caprese.config.content_type
+
       super
     end
 

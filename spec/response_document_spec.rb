@@ -15,6 +15,34 @@ describe 'Resource document structure', type: :request do
     end
   end
 
+  describe 'Content-Type header' do
+    before { get '/api/v1/comments', nil, { 'Content-Type' => content_type } }
+
+    context 'application/json' do
+      let(:content_type) { 'application/json' }
+
+      it 'accepts request' do
+        expect(response.status).to eq(200)
+      end
+
+      it 'responds with application/vnd.api+json' do
+        expect(response.headers['Content-Type']).to eq('application/vnd.api+json; charset=utf-8')
+      end
+    end
+
+    context 'application/vnd.api+json' do
+      let(:content_type) { 'application/vnd.api+json' }
+
+      it 'accepts request' do
+        expect(response.status).to eq(200)
+      end
+
+      it 'responds with application/vnd.api+json' do
+        expect(response.headers['Content-Type']).to eq('application/vnd.api+json; charset=utf-8')
+      end
+    end
+  end
+
   describe 'type' do
     before { get "/api/v1/#{resource.class.name.underscore.pluralize}/#{resource.id}" }
 

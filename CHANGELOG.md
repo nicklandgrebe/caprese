@@ -180,6 +180,10 @@
 * Fix issue regarding `:base` field titles interpolated into error messages
 * Add more detailed error responses to `update_relationship_definition` endpoints
 
+## 0.6.0
+
+* Accept and respond with `Content-Type: application/vnd.api+json`
+
 # Master
 
 * Switches to Rails 5, drops support for Rails 4
