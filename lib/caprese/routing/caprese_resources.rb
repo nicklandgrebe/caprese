@@ -5,7 +5,7 @@ class ActionDispatch::Routing::Mapper
     options = resources.extract_options!
 
     resources.each do |r|
-      resources r, only: [:index, :show, :create, :update, :destroy] do
+      resources r, options do
         yield if block_given?
 
         member do
