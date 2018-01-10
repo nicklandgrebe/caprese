@@ -4,8 +4,10 @@ class ActionDispatch::Routing::Mapper
   def caprese_resources(*resources, &block)
     options = resources.extract_options!
 
+    options[:only] ||= %i[index show create update destroy]
+
     resources.each do |r|
-      resources r, only: [:index, :show, :create, :update, :destroy] do
+      resources r, options do
         yield if block_given?
 
         member do
