@@ -16,7 +16,7 @@ describe 'Resource document structure', type: :request do
   end
 
   describe 'Content-Type header' do
-    before { get '/api/v1/comments', nil, { 'Content-Type' => content_type } }
+    before { get '/api/v1/comments', params: {}, headers: { 'Content-Type' => content_type } }
 
     context 'application/json' do
       let(:content_type) { 'application/json' }
