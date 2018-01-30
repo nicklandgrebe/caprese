@@ -65,6 +65,14 @@ module Caprese
         if queried_association.reflection.collection?
           scope = relationship_scope(params[:relationship].to_sym, queried_association.reader)
 
+          if scope.any? && query_params[:filter] && !query_params[:filter].empty?
+            if (valid_filters = query_params[:filter].select { |k, _| scope.column_names.include? actual_field(k).to_s }).present?
+              valid_filters.each do |k, v|
+                scope = scope.where(actual_field(k) => v)
+              end
+            end
+          end
+          
           if params[:relation_primary_key_value].present?
             get_record!(scope, self.class.config.resource_primary_key, params[:relation_primary_key_value])
           else
