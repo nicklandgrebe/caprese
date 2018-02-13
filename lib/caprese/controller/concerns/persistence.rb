@@ -40,9 +40,10 @@ module Caprese
       fail_on_type_mismatch(data_params[:type])
 
       @queried_record = queried_record_scope.build
-      assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:create))
 
       execute_after_initialize_callbacks(queried_record)
+
+      assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:create))
 
       execute_before_create_callbacks(queried_record)
       execute_before_save_callbacks(queried_record)

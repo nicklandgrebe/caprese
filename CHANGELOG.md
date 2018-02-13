@@ -186,9 +186,11 @@
 
 # Master
 
-* Switches to Rails 5, drops support for Rails 4
+* BREAKING: Switches to Rails 5, drops support for Rails 4
 * Protects against arrays being sent as data for create and update actions
 * Allow options to be passed into caprese_resources
 * Allow filter params to be used on relationship endpoints
 * Set queried_record equal to record being created in #create
 * Fix relationship primary data error source pointers
+* BREAKING: Execute `after_initialize` callbacks before `assign_changes_from_document`
+  * Old functionality: Called after `assign_changes_from_document`, same functionality as `before_create`
