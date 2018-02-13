@@ -191,3 +191,4 @@
 * Allow options to be passed into caprese_resources
 * Allow filter params to be used on relationship endpoints
 * Set queried_record equal to record being created in #create
+* Fix relationship primary data error source pointers
