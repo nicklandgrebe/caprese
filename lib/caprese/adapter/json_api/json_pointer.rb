@@ -8,7 +8,6 @@ module Caprese
           attribute:    '/data/attributes/%s'.freeze,
           relationship_attribute: '/data/relationships/%s'.freeze,
           relationship_base: '/data/relationships/%s/data'.freeze,
-          relationship_primary_data: '/data/relationships/%s/data/%s'.freeze,
           primary_data: '/data/%s'.freeze,
           base: '/data'.freeze
         }.freeze
@@ -31,7 +30,7 @@ module Caprese
         # @param [Record] the record that owns the errors
         # @param [Object,Array<Object>]
         def new(pointer_type, record, value)
-          if pointer_type == :relationship_attribute
+          if pointer_type.in?(%i[relationship_attribute relationship_primary_data])
             values = value.to_s.split('.')
             last_index = values.count - 1
 
@@ -47,7 +46,11 @@ module Caprese
                     format(POINTERS[:relationship_attribute], v)
                   end
                 else
-                  format(POINTERS[:attribute], v)
+                  if v.in?(Error::RESERVED_ATTRIBUTES)
+                    format(POINTERS[:primary_data], v)
+                  else
+                    format(POINTERS[:attribute], v)
+                  end
                 end
             end
           else

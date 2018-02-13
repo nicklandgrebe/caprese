@@ -232,6 +232,42 @@ describe 'Resource document structure', type: :request do
     end
   end
 
+  describe 'error source pointers' do
+    context 'nested relationship primary data' do
+      before do
+        API::V1::CommentsController.send :define_method, :add_error do |resource|
+          resource.errors.add('post.user.type')
+        end
+        API::V1::CommentsController.before_create(:add_error)
+      end
+
+      after do
+        API::V1::CommentsController.instance_variable_set('@before_create_callbacks', [])
+      end
+
+      before { post "/api/v1/#{type}/", params: { data: data } }
+
+      subject(:data) do
+        output = { type: type }
+        output.merge!(attributes: attributes)
+        output.merge!(relationships: relationships)
+      end
+
+      subject(:type) { 'comments' }
+      subject(:attributes) { { body: 'One body' } }
+      subject(:relationships) do
+        {
+          user: { data: { type: 'users', id: create(:user).id } },
+          post: { data: { type: 'posts', id: create(:post).id } }
+        }
+      end
+
+      it 'creates the correct pointer' do
+        expect(json['errors'][0]['source']['pointer']).to eq('/data/relationships/post/data/relationships/user/data/type')
+      end
+    end
+  end
+
   describe 'aliasing' do
     describe 'attribute mocking' do
       before do

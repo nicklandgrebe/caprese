@@ -120,7 +120,7 @@ module Caprese
             elsif (relationship_data_items = attribute_name.to_s.split('.')).size > 1
               if RESERVED_ATTRIBUTES.include?(relationship_data_items.last)
                 {
-                  pointer: JsonApi::JsonPointer.new(:relationship_primary_data, record, relationship_data_items)
+                  pointer: JsonApi::JsonPointer.new(:relationship_primary_data, record, attribute_name)
                 }
               else
                 {
