@@ -189,3 +189,5 @@
 * Switches to Rails 5, drops support for Rails 4
 * Protects against arrays being sent as data for create and update actions
 * Allow options to be passed into caprese_resources
+* Allow filter params to be used on relationship endpoints
+* Set queried_record equal to record being created in #create
