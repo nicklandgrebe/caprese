@@ -39,25 +39,25 @@ module Caprese
     def create
       fail_on_type_mismatch(data_params[:type])
 
-      record = queried_record_scope.build
-      assign_changes_from_document(record, data_params.to_unsafe_h, permitted_params_for(:create))
+      @queried_record = queried_record_scope.build
+      assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:create))
 
-      execute_after_initialize_callbacks(record)
+      execute_after_initialize_callbacks(queried_record)
 
-      execute_before_create_callbacks(record)
-      execute_before_save_callbacks(record)
+      execute_before_create_callbacks(queried_record)
+      execute_before_save_callbacks(queried_record)
 
-      fail RecordInvalidError.new(record, engaged_field_aliases) if record.errors.any?
+      fail RecordInvalidError.new(queried_record, engaged_field_aliases) if queried_record.errors.any?
 
-      record.save!
+      queried_record.save!
 
-      persist_collection_relationships(record)
+      persist_collection_relationships(queried_record)
 
-      execute_after_create_callbacks(record)
-      execute_after_save_callbacks(record)
+      execute_after_create_callbacks(queried_record)
+      execute_after_save_callbacks(queried_record)
 
       render(
-        json: record,
+        json: queried_record,
         status: :created,
         fields: query_params[:fields].try(:to_unsafe_hash),
         include: query_params[:include]
