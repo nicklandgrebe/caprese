@@ -573,6 +573,18 @@ You should also look into the configuration for [ActiveModelSerializers](https:/
 
 Coming soon... :)
 
+### Using with Devise or other authentication
+
+If you use a `before_action` filter such as Devise's `authenticate_user!`, be sure to prepend it, like so:
+
+```ruby
+class Api::V1::User::ApiController < Caprese::Controller
+  prepend_before_action :authenticate_user!
+end
+```
+
+Otherwise, Caprese's `around_action :enable_caprese_style_errors` will run first, then the action will fail, causing Caprese Style Errors to stay enabled even for your non-Caprese controllers that show errors for Caprese models (such as login pages).
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
