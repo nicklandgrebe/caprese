@@ -11,7 +11,7 @@ module Caprese
       :before_query, :after_query,
       :after_initialize,
       :before_create, :after_create,
-      :before_update, :after_update,
+      :before_update_assign, :before_update, :after_update,
       :before_save, :after_save,
       :before_destroy, :after_destroy
     ]

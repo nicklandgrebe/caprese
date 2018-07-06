@@ -72,6 +72,8 @@ module Caprese
     def update
       fail_on_type_mismatch(data_params[:type])
 
+      execute_before_update_assign_callbacks(queried_record)
+
       assign_changes_from_document(queried_record, data_params.to_unsafe_h, permitted_params_for(:update))
 
       execute_before_update_callbacks(queried_record)
