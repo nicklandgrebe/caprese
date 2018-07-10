@@ -427,6 +427,89 @@ describe 'Requests that persist data', type: :request do
     end
   end
 
+  describe 'relationship references' do
+    before do
+      Caprese.config.optimize_relationships = true
+
+      params = { data: data }
+      params[:include] = includes unless includes.nil?
+
+      post "/api/v1/#{type}/", params: params
+    end
+
+    after { Caprese.config.optimize_relationships = false }
+
+    subject(:type) { 'comments' }
+    subject(:data_type) { type }
+    subject(:attributes) { {} }
+    subject(:relationships) { {} }
+    subject(:data) do
+      output = { type: data_type }
+      output.merge!(attributes: attributes)
+      output.merge!(relationships: relationships)
+    end
+
+    subject(:attributes) do
+      {
+        body: 'unique_body'
+      }
+    end
+
+    subject(:relationships) do
+      {
+        user: { data: { type: 'users', id: user.id } },
+        post: { data: { type: 'posts', id: resource.id } }
+      }
+    end
+
+    let(:includes) { nil }
+
+    it 'adds data for relationships involved in persistence' do
+      expect(json['data']['relationships']['post']['data']).not_to be_nil
+      expect(json['data']['relationships']['user']['data']).not_to be_nil
+    end
+
+    it 'does not add data for relationships not involved in persistence' do
+      expect(json['data']['relationships']['rating']).to be_nil
+    end
+
+    context 'including relationships' do
+      let(:includes) { 'rating' }
+
+      it 'adds data for relationships involved in persistence' do
+        expect(json['data']['relationships']['post']['data']).not_to be_nil
+        expect(json['data']['relationships']['user']['data']).not_to be_nil
+      end
+
+      it 'add data for relationships included' do
+        expect(json['data']['relationships']['rating']).not_to be_nil
+      end
+    end
+
+    context 'nested relationships' do
+      let(:includes) { 'post' }
+
+      subject(:relationships) do
+        {
+          user: { data: { type: 'users', id: user.id } },
+          post: { data: {
+            type: 'posts',
+            id: resource.id,
+            relationships: {
+              user: {
+                data: { type: 'users', id: user.id }
+              }
+            }
+          } }
+        }
+      end
+
+      it 'adds data for nested relationships involved in persistence' do
+        expect(json['included'][0]['relationships']['user']['data']).not_to be_nil
+      end
+    end
+  end
+
   describe '#destroy' do
     before { delete "/api/v1/#{destroying.class.name.underscore.pluralize}/#{destroying.id}" }
 

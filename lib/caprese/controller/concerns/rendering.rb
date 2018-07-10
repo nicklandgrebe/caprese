@@ -26,6 +26,8 @@ module Caprese
             options[:serializer] ||= serializer_for(options[:json])
           end
         end
+
+        options[:persistence_references] = relationships_referenced
       end
 
       headers['Content-Type'] = Caprese.config.content_type

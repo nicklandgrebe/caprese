@@ -30,6 +30,13 @@ module Caprese
 
       def initialize(serializer, options = {})
         super
+
+        begin
+          @persistence_references = serializer.send(:instance_options).delete(:persistence_references).join(',')
+        rescue NoMethodError
+          @persistence_references = []
+        end
+
         @include_directive = JSONAPI::IncludeDirective.new(options[:include], allow_wildcard: true)
         @fieldset = options[:fieldset] || ActiveModel::Serializer::Fieldset.new(options.delete(:fields))
       end
@@ -293,7 +300,11 @@ module Caprese
         end
 
         requested_associations = fieldset.fields_for(resource_object[:type])
-        requested_associations ||= included_associations.to_string if Caprese.config.optimize_relationships
+        if Caprese.config.optimize_relationships
+          requested_associations ||= [
+            @persistence_references, included_associations.to_string
+          ].select(&:present?).join(',')
+        end
         requested_associations ||= '*'
         requested_associations = JSONAPI::IncludeDirective.new(
           requested_associations,

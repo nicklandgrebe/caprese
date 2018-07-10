@@ -194,3 +194,4 @@
 * Fix relationship primary data error source pointers
 * BREAKING: Execute `after_initialize` callbacks before `assign_changes_from_document`
   * Old functionality: Called after `assign_changes_from_document`, same functionality as `before_create`
+* Add `relationships_referenced` helper so that when `optimize_relationships` is enabled and relationships are changed as part of a persistence request (create, update), respond with the data for these relationships in the primary data instead of skipping them

@@ -276,14 +276,16 @@ module Caprese
           record,
           data[:relationships],
           singular_relationships,
-          aliases_document
+          aliases_document,
+          parent_relationship_name
         )
 
         assign_fields_to_record record, extract_relationships_from_document(
           record,
           data[:relationships],
           collection_relationships,
-          aliases_document
+          aliases_document,
+          parent_relationship_name
         )
       end
     end
@@ -329,8 +331,9 @@ module Caprese
     # @param [Parameters] data the document to extract relationships from
     # @param [Array<Symbol,Hash>] permitted_relationships the permitted relationships that can be assigned through this controller
     # @param [Hash] aliases_document the aliases document reflects usage of aliases in the data document
+    # @param [Hash] parent_relationship the name of the parent relationship, for use by relationships_referenced
     # @return [Hash] the object of relationships to assign to the record
-    def extract_relationships_from_document(record, data, permitted_relationships, aliases_document)
+    def extract_relationships_from_document(record, data, permitted_relationships, aliases_document, parent_relationship)
       data
       .slice(*flattened_keys_for(permitted_relationships))
       .each_with_object({}) do |(relationship_name, relationship_data), relationships|
@@ -340,6 +343,10 @@ module Caprese
         if relationship_name != actual_relationship_name
           aliases_document[relationship_name] = {}
         end
+
+        relationships_referenced.push(
+          parent_relationship ? "#{parent_relationship}.#{relationship_name}" : relationship_name
+        )
 
         begin
           raise RequestDocumentInvalidError.new(field: :base) unless relationship_data.has_key?(:data)
@@ -449,6 +456,10 @@ module Caprese
       .to_h.each do |name, targets|
         targets.each { |t| t.update name => record }
       end
+    end
+
+    def relationships_referenced
+      @relationships_referenced ||= []
     end
   end
 end
