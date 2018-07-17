@@ -16,7 +16,9 @@ module Caprese
           output = { json: e }
           render output.merge(e.header)
         else
-          fail e
+          logger.info e.inspect
+          logger.info e.backtrace.join("\n")
+          render json: Caprese::Error.new(code: :server_error), status: 500
         end
       end
     end
