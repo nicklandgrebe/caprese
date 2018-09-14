@@ -567,7 +567,7 @@ config.default_page_size ||= 10
 config.max_page_size ||= 100
 ```
 
-You should also look into the configuration for [ActiveModelSerializers](https://github.com/rails-api/active_model_serializers/blob/master/docs/general/configuration_options.md) to customize the serializer behavior further.
+You should also look into the configuration for [ActiveModelSerializers](https://github.com/rails-api/active_model_serializers/blob/0-10-stable/docs/general/configuration_options.md) to customize the serializer behavior further.
 
 ### Overriding an action while still using Caprese helpers
 
