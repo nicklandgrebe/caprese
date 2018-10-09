@@ -25,6 +25,13 @@ en:
     v1:
       errors:
         models:
+          post:
+            title:
+              too_fluffy:
+                one:
+                  Title has one fluff, which is too much
+                other:
+                  Title has %{count} fluffs, which is way too much
           comment:
             rating:
               value:

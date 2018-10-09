@@ -7,7 +7,8 @@ describe Caprese::Record, type: :model do
   after { Caprese::Record.caprese_style_errors = false }
 
   describe '#errors' do
-    before { record.errors.add(field) }
+    let(:options) { {} }
+    before { record.errors.add(field, :too_fluffy, options) }
 
     let(:error) { record.errors.to_a.first }
 
@@ -24,6 +25,22 @@ describe Caprese::Record, type: :model do
 
       it 'sets field title to model name' do
         expect(error.t[:field]).to eq('title')
+      end
+
+      context 'with pluralized value' do
+        context 'value 1' do
+          let(:options) { { t: { count: 1 } } }
+
+          subject { record.errors.full_messages.join }
+          it { is_expected.to eq 'Title has one fluff, which is too much'}
+        end
+
+        context 'value 5' do
+          let(:options) { { t: { count: 5 } } }
+
+          subject { record.errors.full_messages.join }
+          it { is_expected.to eq 'Title has 5 fluffs, which is way too much'}
+        end
       end
     end
   end
