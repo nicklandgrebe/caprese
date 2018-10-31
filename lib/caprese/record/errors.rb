@@ -14,7 +14,7 @@ module Caprese
       def add(attribute, code = :invalid, options = {})
         options = options.dup
         options[:t] ||= {}
-        options[:t][:count] = options[:count]
+        options[:t][:count] ||= options[:count]
         options[:t][:value] ||= options[:value] ||
           if attribute != :base && @base.respond_to?(attribute)
             @base.send(:read_attribute_for_validation, attribute)
