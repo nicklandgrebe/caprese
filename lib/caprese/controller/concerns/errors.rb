@@ -8,20 +8,9 @@ module Caprese
 
     included do
       around_action :enable_caprese_style_errors
-
-      rescue_from Exception do |e|
-        Caprese::Record.caprese_style_errors = false
-
-        if e.is_a?(Caprese::Error)
-          output = { json: e }
-          render output.merge(e.header)
-        else
-          logger.info e.inspect
-          logger.info e.backtrace.join("\n")
-          render json: Caprese::Error.new(code: :server_error), status: 500
-        end
-      end
+      rescue_from(StandardError) { |e| handle_exception(e) }
     end
+
 
     # Fail with a controller action error
     #
@@ -45,6 +34,20 @@ module Caprese
       Caprese::Record.caprese_style_errors = true
       yield
       Caprese::Record.caprese_style_errors = false
+    end
+
+    # Gracefully handles exceptions raised during Caprese controller actions.
+    # Override this method in your controller to add your own exception handlers
+    def handle_exception(e)
+      Caprese::Record.caprese_style_errors = false
+      if e.is_a?(Caprese::Error)
+        output = { json: e }
+        render output.merge(e.header)
+      else
+        logger.info e.inspect
+        logger.info e.backtrace.join("\n")
+        render json: Caprese::Error.new(code: :server_error), status: 500
+      end
     end
   end
 end
