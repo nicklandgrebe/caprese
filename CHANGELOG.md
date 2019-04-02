@@ -165,7 +165,7 @@
   * New behavior: Relationships in serializers use the name of the relationship as an assumption about the serializer for that relationship
     * Example: `has_many :productos => ProductoSerializer`
   * Can override by passing any serializer: `has_many :productos, serializer: ProductSerializer`
-  
+
 ## 0.4.1
 
 * Allows `:self` link to be overridden in serializers that subclass Caprese::Serializer
@@ -195,3 +195,4 @@
 * BREAKING: Execute `after_initialize` callbacks before `assign_changes_from_document`
   * Old functionality: Called after `assign_changes_from_document`, same functionality as `before_create`
 * Add `relationships_referenced` helper so that when `optimize_relationships` is enabled and relationships are changed as part of a persistence request (create, update), respond with the data for these relationships in the primary data instead of skipping them
+* BREAKING: Use ActionController::API for Caprese::Controller
