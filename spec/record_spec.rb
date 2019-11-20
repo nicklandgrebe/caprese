@@ -3,8 +3,8 @@ require 'spec_helper'
 describe Caprese::Record, type: :model do
   let(:record) { create :post }
 
-  before { Caprese::Record.caprese_style_errors = true }
-  after { Caprese::Record.caprese_style_errors = false }
+  before { Caprese::Current.caprese_style_errors = true }
+  after { Caprese::Current.caprese_style_errors = false }
 
   describe '#errors' do
     let(:options) { {} }
