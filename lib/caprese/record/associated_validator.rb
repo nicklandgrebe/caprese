@@ -15,7 +15,7 @@ module Caprese
     #   ]
     class AssociatedValidator < ActiveRecord::Validations::AssociatedValidator
       def validate_each(record, attribute, value)
-        if Caprese::Record.caprese_style_errors
+        if Current.caprese_style_errors
           Array(value).reject { |r| r.marked_for_destruction? || r.valid? }.each do |invalid_record|
             invalid_record.errors.to_a.each do |error|
               field_name = error.field ? "#{attribute}.#{error.field}" : attribute

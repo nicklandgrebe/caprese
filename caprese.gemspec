@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'active_model_serializers', '0.10.7'
   spec.add_dependency 'kaminari', '>= 0.17.0'
-  spec.add_dependency 'rails', '>= 5.1.0', '< 6.0.0'
+  spec.add_dependency 'rails', '>= 5.2.0', '< 6.0.0'
 
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'factory_girl'
