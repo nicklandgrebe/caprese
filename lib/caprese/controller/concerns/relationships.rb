@@ -72,9 +72,9 @@ module Caprese
               end
             end
           end
-          
+
           if params[:relation_primary_key_value].present?
-            get_record!(scope, self.class.config.resource_primary_key, params[:relation_primary_key_value])
+            get_record!(scope, Caprese.config.resource_primary_key, params[:relation_primary_key_value])
           else
             apply_sorting_pagination_to_scope(scope)
           end
@@ -93,7 +93,7 @@ module Caprese
           links[:related] =
             url_helpers.send(
               related_url,
-              target.read_attribute(self.config.resource_primary_key),
+              target.read_attribute(Caprese.config.resource_primary_key),
               host: caprese_default_url_options_host
             )
         end
