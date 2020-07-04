@@ -7,6 +7,7 @@ module API
       belongs_to :user
 
       has_one :rating
+      has_one :comment_reply
     end
   end
 end

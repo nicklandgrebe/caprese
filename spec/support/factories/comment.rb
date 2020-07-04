@@ -9,5 +9,11 @@ FactoryGirl.define do
         create :rating, comment: comment
       end
     end
+
+    trait :with_replies do
+      after(:create) do |comment|
+        create :comment, parent_comment: comment, post: comment.post
+      end
+    end
   end
 end

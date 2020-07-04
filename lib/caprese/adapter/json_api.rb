@@ -107,6 +107,7 @@ module Caprese
         #  else
         #    nil
         #  end
+        primary_data = primary_data.map { |d| d[1] }
         hash[:data] = is_collection ? primary_data : primary_data[0]
         # toplevel_included
         #   alias included
@@ -122,7 +123,10 @@ module Caprese
         #       resource,
         #       resource
         #     ]
-        hash[:included] = included if included.any?
+        if included.any?
+          included = included.map { |d| d[1] }
+          hash[:included] = included if included.any?
+        end
 
         Jsonapi.add!(hash)
 
@@ -239,13 +243,21 @@ module Caprese
 
       def process_resource(serializer, primary, included_associations)
         resource_identifier = ResourceIdentifier.new(serializer, instance_options).as_json
-        return false unless @resource_identifiers.add?(resource_identifier)
+        exists = !@resource_identifiers.add?(resource_identifier)
 
         resource_object = resource_object_for(serializer, included_associations)
         if primary
-          @primary << resource_object
+          if exists
+            @primary[@primary.find_index { |d| d[0] == resource_identifier }] = [resource_identifier, resource_object]
+          else
+            @primary << [resource_identifier, resource_object]
+          end
         else
-          @included << resource_object
+          if exists
+            @included[@included.find_index { |d| d[0] == resource_identifier }] = [resource_identifier, resource_object]
+          else
+            @included << [resource_identifier, resource_object]
+          end
         end
 
         true

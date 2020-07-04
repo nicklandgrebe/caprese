@@ -232,6 +232,25 @@ describe 'Resource document structure', type: :request do
     end
   end
 
+  context 'when circular relationship' do
+    before { Caprese.config.optimize_relationships = true }
+    after { Caprese.config.optimize_relationships = false }
+
+    let!(:post) { create :post, :with_comments_and_replies, comment_count: 3 }
+
+    before { get "/api/v1/posts/#{post.id}#{query_str}" }
+
+    subject(:query_str) { '?include=comments.comment_reply.child,comments.user' }
+
+    it 'replaces includes with later includes' do
+      include = json['included'].select { |i| i['type'] == 'comments' }[1]
+      expect(include['relationships']['user']['data']).to be_present
+      
+      include_2 = json['included'].detect { |i| i['type'] == 'users' && i['id'] == include['relationships']['user']['data']['id'] }
+      expect(include_2).to be_present
+    end
+  end
+
   describe 'error source pointers' do
     context 'nested relationship primary data' do
       before do
@@ -784,7 +803,7 @@ describe 'Resource document structure', type: :request do
 
       describe 'post' do
         before { post '/api/v1/comments', params: { data: data } }
-        
+
         let(:name) { 'A valid name' }
 
         let(:data) do
@@ -823,7 +842,7 @@ describe 'Resource document structure', type: :request do
         it 'aliases attribute' do
           expect(Comment.last.post.title).to eq(name)
         end
-        
+
         context 'when attribute invalid' do
           let(:name) { '' }
 
