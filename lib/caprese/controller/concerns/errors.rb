@@ -7,7 +7,7 @@ module Caprese
     extend ActiveSupport::Concern
 
     included do
-      around_action :enable_caprese_style_errors
+      before_action :enable_caprese_style_errors
       rescue_from(StandardError) { |e| handle_exception(e) }
     end
 
@@ -31,15 +31,12 @@ module Caprese
 
     # Temporarily render model errors as Caprese::Record::Errors instead of ActiveModel::Errors
     def enable_caprese_style_errors
-      Caprese::Record.caprese_style_errors = true
-      yield
-      Caprese::Record.caprese_style_errors = false
+      Current.caprese_style_errors = true
     end
 
     # Gracefully handles exceptions raised during Caprese controller actions.
     # Override this method in your controller to add your own exception handlers
     def handle_exception(e)
-      Caprese::Record.caprese_style_errors = false
       if e.is_a?(Caprese::Error)
         output = { json: e }
         render output.merge(e.header)

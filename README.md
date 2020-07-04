@@ -547,24 +547,44 @@ Caprese will search for controller errors in the following order:
 
 ### Configuration
 
+To configure Caprese, create an initializer in your Rails project such as the one below. The values in the example below are default and only need to be included if you intend to change them.
+
 ```ruby
-# Defines the primary key to use when querying records
-config.resource_primary_key ||= :id
+# config/initializers/caprese.rb
+Caprese.configure do |config|
+  # Defines the primary key to use when querying records
+  config.resource_primary_key = :id
 
-# Define URL options for use in UrlHelpers
-config.default_url_options ||= {}
+  # Defines the ActiveModelSerializers adapter to use when serializing
+  config.adapter = :json_api
 
-# If true, relationship data will not be serialized unless it is in `include`, huge performance boost
-config.optimize_relationships ||= true
+  # Defines the full Content-Type header to respond with
+  # config.note Caprese accepts both application/json and application/vnd.api+json
+  config.content_type = 'application/vnd.api+json; charset=utf-8'
 
-# Defines the translation scope for model and controller errors
-config.i18n_scope ||= '' # 'api.v1.errors'
+  # Define URL options for use in UrlHelpers
+  config.default_url_options = {}
 
-# The default size of any page queried
-config.default_page_size ||= 10
+  # If true, links will be rendered as `only_path: true`
+  # TODO: Implement this
+  config.only_path_links = true
 
-# The maximum size of any page queried
-config.max_page_size ||= 100
+  # If true, relationship data will not be serialized unless it is in `include`
+  config.optimize_relationships = false
+
+  # Defines the translation scope for model and controller errors
+  config.i18n_scope = '' # 'api.v1.errors'
+
+  # The default size of any page queried
+  config.default_page_size = 10
+
+  # The maximum size of any page queried
+  config.max_page_size = 100
+
+  # If true, Caprese will trim the isolated namespace module of the engine off the front of output
+  #   from methods contained in Versioning module
+  config.isolated_namespace = nil
+end
 ```
 
 You should also look into the configuration for [ActiveModelSerializers](https://github.com/rails-api/active_model_serializers/blob/0-10-stable/docs/general/configuration_options.md) to customize the serializer behavior further.

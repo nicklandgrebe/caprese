@@ -182,14 +182,14 @@ module Caprese
           offset = scope.count + offset
         end
 
-        limit = query_params[:limit] && query_params[:limit].to_i || self.config.default_page_size
-        limit = [limit, self.config.max_page_size].min
+        limit = query_params[:limit] && query_params[:limit].to_i || Caprese.config.default_page_size
+        limit = [limit, Caprese.config.max_page_size].min
 
         scope.offset(offset).limit(limit)
       else
         page_number = query_params[:page].try(:[], :number)
-        page_size = query_params[:page].try(:[], :size).try(:to_i) || self.config.default_page_size
-        page_size = [page_size, self.config.max_page_size].min
+        page_size = query_params[:page].try(:[], :size).try(:to_i) || Caprese.config.default_page_size
+        page_size = [page_size, Caprese.config.max_page_size].min
 
         scope.page(page_number).per(page_size)
       end
@@ -225,7 +225,7 @@ module Caprese
       @queried_record ||=
         get_record!(
           queried_record_scope,
-          self.config.resource_primary_key,
+          Caprese.config.resource_primary_key,
           params[:id]
         )
     end
