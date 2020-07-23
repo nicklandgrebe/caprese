@@ -248,13 +248,15 @@ module Caprese
         resource_object = resource_object_for(serializer, included_associations)
         if primary
           if exists
-            @primary[@primary.find_index { |d| d[0] == resource_identifier }] = [resource_identifier, resource_object]
+            index = @primary.find_index { |d| d[0] == resource_identifier }
+            @primary[index] = [resource_identifier, resource_object]
           else
             @primary << [resource_identifier, resource_object]
           end
         else
           if exists
-            @included[@included.find_index { |d| d[0] == resource_identifier }] = [resource_identifier, resource_object]
+            return if (index = @included.find_index { |d| d[0] == resource_identifier }).nil?
+            @included[index] = [resource_identifier, resource_object]
           else
             @included << [resource_identifier, resource_object]
           end
