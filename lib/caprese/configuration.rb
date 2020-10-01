@@ -10,6 +10,7 @@ module Caprese
       :max_page_size,
       :only_path_links,
       :optimize_relationships,
+      :relationship_links,
       :resource_primary_key
     )
 
@@ -33,6 +34,9 @@ module Caprese
 
       # If true, relationship data will not be serialized unless it is in `include`
       @optimize_relationships = false
+
+      # If true, relationship links will be serialized
+      @relationship_links = true
 
       # Defines the translation scope for model and controller errors
       @i18n_scope = '' # 'api.v1.errors'

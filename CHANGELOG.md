@@ -197,3 +197,4 @@
 * Add `relationships_referenced` helper so that when `optimize_relationships` is enabled and relationships are changed as part of a persistence request (create, update), respond with the data for these relationships in the primary data instead of skipping them
 * BREAKING: Use ActionController::API for Caprese::Controller
 * Allow includes to overwrite past includes of same resource identifier
+* Add config.relationship_links to toggle relationship link serialization

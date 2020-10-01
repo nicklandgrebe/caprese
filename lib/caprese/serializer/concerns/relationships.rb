@@ -81,27 +81,29 @@ module Caprese
           reflection_name = reflection_name.to_sym
 
           Proc.new do |serializer|
-            link :self do
-              url = "relationship_definition_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
-              if serializer.url_helpers.respond_to? url
-                serializer.url_helpers.send(
-                  url,
-                  id: object.read_attribute(Caprese.config.resource_primary_key),
-                  relationship: reflection_name,
-                  host: serializer.class.send(:caprese_default_url_options_host)
-                )
+            if Caprese.config.relationship_links
+              link :self do
+                url = "relationship_definition_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
+                if serializer.url_helpers.respond_to? url
+                  serializer.url_helpers.send(
+                    url,
+                    id: object.read_attribute(Caprese.config.resource_primary_key),
+                    relationship: reflection_name,
+                    host: serializer.class.send(:caprese_default_url_options_host)
+                  )
+                end
               end
-            end
 
-            link :related do
-              url = "relationship_data_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
-              if serializer.url_helpers.respond_to? url
-                serializer.url_helpers.send(
-                  url,
-                  id: object.read_attribute(Caprese.config.resource_primary_key),
-                  relationship: reflection_name,
-                  host: serializer.class.send(:caprese_default_url_options_host)
-                )
+              link :related do
+                url = "relationship_data_#{serializer.version_name("#{serializer.unnamespace(object.class.name).underscore}_url")}"
+                if serializer.url_helpers.respond_to? url
+                  serializer.url_helpers.send(
+                    url,
+                    id: object.read_attribute(Caprese.config.resource_primary_key),
+                    relationship: reflection_name,
+                    host: serializer.class.send(:caprese_default_url_options_host)
+                  )
+                end
               end
             end
 
